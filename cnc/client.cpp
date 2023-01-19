@@ -14,6 +14,10 @@ int main(){
     auto res = cli.Get("/hi");
     cout<<res->status<<endl;
     cout<<res->body<<endl;
+
+    res = cli.Get("/numbers/15");
+    cout<<res->status<<endl;
+    cout<<res->body<<endl;
     
     return 0;
 
