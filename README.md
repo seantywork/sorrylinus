@@ -1,6 +1,10 @@
 cpp-server
 ===========
 
+C++ REST Networking Materials
+
+Based on [Yuji Hirose's Fantastic Work](https://github.com/yhirose/cpp-httplib)
+
 License
 -------
 
