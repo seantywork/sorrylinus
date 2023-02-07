@@ -1,16 +1,19 @@
 cpp-server
 ===========
 
-C++ REST Networking Materials
+C++ Tiny Sever
 
-Based on [Yuji Hirose's Fantastic Work](https://github.com/yhirose/cpp-httplib)
 
 License
 -------
 
-MIT license (© 2022 Yuji Hirose)
+Refer to LICENSE file
 
 Thanks To
 -----------------
-
+- Http Lib
 [Yuji Hirose](https://github.com/yhirose/cpp-httplib)
+- CSV Parser
+[ben-strasser](https://github.com/ben-strasser/fast-cpp-csv-parser)
+- JSON Parser
+[Niels Lohmann](https://github.com/nlohmann/json)
