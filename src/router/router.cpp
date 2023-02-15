@@ -5,41 +5,35 @@
 
 using namespace httplib;
 
+/*
 using json = nlohmann::json;
 
 std::ifstream rt_f("./config.json");
 json rt_config_data = json::parse(rt_f);
-
-std::string ADDRESS = rt_config_data["ADDRESS"];
-int PORT =  rt_config_data["PORT"];
-
+*/
 
 
 class Router {
 
 public:
 
-    Server srv;
+    Server *srv;
 
     Controller ctrl;
 
-    void InitController(){
+    Router(Server *app){
 
-        srv.Get("/", ctrl.GetIndex);
+        srv = app;
 
 
     }
 
+    void Init(){
 
-    void Start(){
+        srv->Get("/", ctrl.GetIndex);
 
-        std::cout << "Server is up and runnning..." << std::endl;
+    }
 
-        std::cout << "-----> ADDRESS : " << ADDRESS << " " << "PORT : " << PORT << std::endl;
-
-        srv.listen(ADDRESS, PORT);
-
-    } 
 
 
 };

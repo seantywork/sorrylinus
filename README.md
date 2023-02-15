@@ -1,9 +1,9 @@
-cpp-server
+cpp-implant-server
 ===========
 
-C++ Tiny Implant Sever
+Tiny C++ Implant Sever
 
-... looking like a NodeJS MVC
+based on NodeJS-like MVC
 
 
 License
