@@ -1,7 +1,9 @@
 cpp-server
 ===========
 
-C++ Tiny Sever
+C++ Tiny Implant Sever
+
+... looking like a NodeJS MVC
 
 
 License
