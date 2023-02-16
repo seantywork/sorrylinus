@@ -13,6 +13,7 @@ json rt_config_data = json::parse(rt_f);
 */
 
 
+
 class Router {
 
 public:
@@ -31,6 +32,8 @@ public:
     void Init(){
 
         srv->Get("/", ctrl.GetIndex);
+
+        srv->Post("/get-records", ctrl.GetRecords);
 
     }
 
