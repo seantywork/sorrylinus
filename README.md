@@ -1,9 +1,11 @@
-cpp-implant-server
+tiny-implant-server
 ===========
 
-Tiny C++ Implant Sever
+Tiny Implant Sever in C++
 
 based on NodeJS-like MVC
+
+for remote system monitoring & adjustment
 
 
 License
