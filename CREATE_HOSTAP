@@ -1,0 +1,75 @@
+1.
+sudo apt-get install hostapd dnsmasq
+
+2.
+sudo vim /etc/hostapd/hostapd.conf
+
+---
+interface=wlan0
+driver=nl80211
+ssid=MyWiFiNetwork
+hw_mode=g
+channel=7
+wmm_enabled=0
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_passphrase=12345678
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP
+rsn_pairwise=CCMP
+---
+
+3.
+sudo vim /etc/default/hostapd
+
+---
+DAEMON_CONF="/etc/hostapd/hostapd.conf"
+---
+
+4.
+sudo systemctl unmask hostapd
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
+
+5.
+sudo cp /etc/dnsmasq.conf /etc/dnsmasq.conf.org
+
+6.
+sudo vim /etc/dnsmasq.conf
+---
+port=5353
+interface=wlan0
+dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
+---
+
+7.
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
+sudo systemctl reload dnsmasq
+
+8.
+sudo vim /lib/systemd/system/dnsmasq.service
+---
+After=network-online.target
+Wants=network-online.target
+---
+
+9.
+sudo vim /etc/netplan/50-cloud-init.yaml
+---
+network:
+    ethernets:
+        eth0:
+            dhcp4: true
+            optional: true
+        wlan0:
+            dhcp4: false
+            addresses:
+            - 192.168.4.1/24
+    version: 2
+---
+
+10.
+sudo reboot
