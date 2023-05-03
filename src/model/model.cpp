@@ -1,7 +1,9 @@
 #include "../../lib/httplib/httplib.h"
-#include "../../lib/fastcsv/csv_parser.h"
+#include <sqlite3.h> 
 
 using namespace httplib;
+
+
 
 
 
@@ -11,6 +13,23 @@ struct RecordText {
 
 };
 
+
+static int callback(void* data, int argc, char** argv, char** azColName)
+{
+    int i;
+    
+    RecordText* data_callback;
+
+    data_callback = (RecordText*)data;
+
+  
+    data_callback->first = argv[0];
+    data_callback->second = argv[1];
+    data_callback->third = argv[2];
+
+    
+    return 0;
+}
 
 
 
@@ -23,18 +42,33 @@ public:
     RecordText GetRecordByCmd(){
 
 
-        io::CSVReader<3> in("./model/data.csv");
-        in.read_header(io::ignore_extra_column,"first","second","third");
-        
-        RecordText ret;
-
-        for(int i=0;i<1;i++){
-
-            in.read_row(ret.first, ret.second, ret.third);
+        sqlite3* DB;
+        int exit = 0;
+        exit = sqlite3_open("./model/rec.db", &DB);
+        RecordText data;
+    
+        std::string sql("SELECT * FROM rec;");
+        if (exit) {
+            std::cerr << "Error open DB " << sqlite3_errmsg(DB) << std::endl;
+            sqlite3_close(DB);
+            return data;
+            
+        }
+        else
+            std::cout << "Opened Database Successfully!" << std::endl;
+    
+        int rc = sqlite3_exec(DB, sql.c_str(), callback, (void*)&data, NULL);
+    
+        if (rc != SQLITE_OK)
+            std::cerr << "Error SELECT" << std::endl;
+        else {
+            std::cout << "Operation OK!" << std::endl;
 
         }
+    
+        sqlite3_close(DB);
 
-        return ret;
+        return data;
 
 
     }
