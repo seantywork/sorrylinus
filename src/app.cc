@@ -1,6 +1,6 @@
 #include "../lib/httplib/httplib.h"
 
-#include "./router/router.cpp"
+#include "./router/router.cc"
 
 using namespace httplib;
 

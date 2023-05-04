@@ -1,7 +1,7 @@
 #include "../../lib/httplib/httplib.h"
 #include "../../lib/nlohmann/json.hpp"
 
-#include "../controller/controller.cpp"
+#include "../controller/controller.cc"
 
 using namespace httplib;
 

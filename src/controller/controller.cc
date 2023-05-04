@@ -2,7 +2,7 @@
 #include "../../lib/nlohmann/json.hpp"
 
 
-#include "../model/model.cpp"
+#include "../model/model.cc"
 
 using namespace httplib;
 
@@ -86,13 +86,26 @@ public:
         std::string val = body_json["CMD"];
 
         
-        RecordText record_data = mdl.GetRecordByCmd();
+        DB_Result record_data = mdl.GetRecordByCmd();
 
         std::string ret_data = "";
 
-        ret_data += "| " + record_data.first + " | " + record_data.second + " | " +record_data.third + " |";
+        if (record_data.Status != 0){
 
+            res.set_content(ret_data,"text/plain");
+            logCurrentTime("[ /get-records ]");
+            return;
 
+        }
+
+        int result_c = record_data.RecordCount;
+        
+        for(int i=0;i<result_c;i++){
+
+            ret_data += "| " + record_data.Result[i].first + " | " + record_data.Result[i].second + " | " +record_data.Result[i].third + " |\n";
+
+        }
+        
         res.set_content(ret_data,"text/plain");
 
 
