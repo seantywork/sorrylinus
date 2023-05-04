@@ -1,3 +1,0 @@
-#!/bin/bash
-
-g++ -pthread -o ./app ./app.cc -l sqlite3

@@ -17,7 +17,7 @@ struct DB_Result {
 
     int Status;
     int RecordCount = 0;
-    RecordText Result[100]; 
+    std::vector<RecordText> Result; 
 
 };
 
@@ -28,8 +28,6 @@ static int GetRecordByCmd_callback(void* data, int argc, char** argv, char** azC
     DB_Result* data_callback;
 
     data_callback = (DB_Result*)data;
-
-    int ridx = data_callback->RecordCount;
 
     RecordText row;
 
@@ -53,7 +51,7 @@ static int GetRecordByCmd_callback(void* data, int argc, char** argv, char** azC
     }
 
     data_callback->RecordCount += 1;
-    data_callback->Result[ridx] = row;
+    data_callback->Result.push_back(row);
     
     
     return 0;
@@ -82,17 +80,13 @@ public:
             data.Status = -1;
             return data;
             
-        }else{
-            std::cout << "Opened Database Successfully!" << std::endl;
         }
         int rc = sqlite3_exec(DB, sql.c_str(), GetRecordByCmd_callback, (void*)&data, NULL);
     
         if (rc != SQLITE_OK){
-            std::cerr << "Error SELECT" << std::endl;
             data.Status = 1;
 
         }else {
-            std::cout << "Operation OK!" << std::endl;
             data.Status = 0;
         }
     
