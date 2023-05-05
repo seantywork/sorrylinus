@@ -94,7 +94,7 @@ then
     echo "PASSPHRASE :"
     read PP
     echo "PASSPHRASE confirm :"
-    read pp_tmp
+    read PP_tmp
 
     if [ "$PP" != "$PP_tmp" ]
     then
