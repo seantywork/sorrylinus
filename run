@@ -6,9 +6,6 @@ SSID=""
 
 PP=""
 
-APP_PATH=$(pwd)
-
-APP_PATH="$APP_PATH/src/app"
 
 create_ap () {
 
