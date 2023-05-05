@@ -135,6 +135,6 @@ then
     g++ -v -pthread -o ./src/app ./src/app.cc -l sqlite3
 fi
 
-$APP_PATH
+cd ./src && ./app
 
 
