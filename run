@@ -6,6 +6,9 @@ SSID=""
 
 PP=""
 
+APP_PATH=$(pwd)
+
+APP_PATH="$APP_PATH/src/app"
 
 create_ap () {
 
@@ -132,6 +135,6 @@ then
     g++ -v -pthread -o ./src/app ./src/app.cc -l sqlite3
 fi
 
-./src/app
+$APP_PATH
 
 
