@@ -1,6 +1,4 @@
-# Page
-
-[Visit Site](https://seantywork.github.io/seantywork/docs/x05)
+# x05 tiny implant server cpp
 
 tiny-implant-server
 ===========
