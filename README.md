@@ -1,6 +1,6 @@
 # Page
 
-[Visit Site](https://seantywork.github.io/x05_tiny-implant-server_cpp)
+[Visit Site](https://seantywork.github.io/docs/x05)
 
 tiny-implant-server
 ===========
