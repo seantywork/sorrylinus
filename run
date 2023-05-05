@@ -43,17 +43,19 @@ create_ap () {
 
     sudo chown root:root /etc/dnsmasq.conf
 
-    sudo systemctl enable hostapd
-    
-    sudo systemctl start hostapd
-    
-    sudo systemctl reload dnsmasq
-
     sudo /bin/cp -rf ./tools/dnsmasq.service /lib/systemd/system/dnsmasq.service
 
     sudo chmod 644 /lib/systemd/system/dnsmasq.service
 
     sudo chown root:root /lib/systemd/system/dnsmasq.service
+
+    sudo systemctl enable hostapd
+    
+    sudo systemctl start hostapd
+    
+    sudo systemctl start dnsmasq
+
+    sudo systemctl reload dnsmasq
 
     sudo /bin/cp -rf ./tools/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml
 
