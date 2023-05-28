@@ -6,15 +6,17 @@
 	* HTTPLIB_REQUIRE_OPENSSL (default off)
 	* HTTPLIB_REQUIRE_ZLIB (default off)
 	* HTTPLIB_USE_BROTLI_IF_AVAILABLE (default on)
+	* HTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN (default on)
 	* HTTPLIB_REQUIRE_BROTLI (default off)
 	* HTTPLIB_COMPILE (default off)
+	* HTTPLIB_TEST (default off)
 	* BROTLI_USE_STATIC_LIBS - tells Cmake to use the static Brotli libs (only works if you have them installed).
 	* OPENSSL_USE_STATIC_LIBS - tells Cmake to use the static OpenSSL libs (only works if you have them installed).
 
 	-------------------------------------------------------------------------------
 
-	After installation with Cmake, a find_package(httplib) is available.
-	This creates a httplib::httplib target (if found).
+	After installation with Cmake, a find_package(httplib COMPONENTS OpenSSL ZLIB Brotli) is available.
+	This creates a httplib::httplib target (if found and if listed components are supported).
 	It can be linked like so:
 
 	target_link_libraries(your_exe httplib::httplib)
@@ -42,6 +44,7 @@
 	* HTTPLIB_IS_USING_OPENSSL - a bool for if OpenSSL support is enabled.
 	* HTTPLIB_IS_USING_ZLIB - a bool for if ZLIB support is enabled.
 	* HTTPLIB_IS_USING_BROTLI - a bool for if Brotli support is enabled.
+	* HTTPLIB_IS_USING_CERTS_FROM_MACOSX_KEYCHAIN - a bool for if support of loading system certs from the Apple Keychain is enabled.
 	* HTTPLIB_IS_COMPILED - a bool for if the library is compiled, or otherwise header-only.
 	* HTTPLIB_INCLUDE_DIR - the root path to httplib's header (e.g. /usr/include).
 	* HTTPLIB_LIBRARY - the full path to the library if compiled (e.g. /usr/lib/libhttplib.so).
@@ -78,7 +81,7 @@ set(_HTTPLIB_OPENSSL_MIN_VER "1.1.1")
 # Allow for a build to require OpenSSL to pass, instead of just being optional
 option(HTTPLIB_REQUIRE_OPENSSL "Requires OpenSSL to be found & linked, or fails build." OFF)
 option(HTTPLIB_REQUIRE_ZLIB "Requires ZLIB to be found & linked, or fails build." OFF)
-# Allow for a build to casually enable OpenSSL/ZLIB support, but silenty continue if not found.
+# Allow for a build to casually enable OpenSSL/ZLIB support, but silently continue if not found.
 # Make these options so their automatic use can be specifically disabled (as needed)
 option(HTTPLIB_USE_OPENSSL_IF_AVAILABLE "Uses OpenSSL (if available) to enable HTTPS support." ON)
 option(HTTPLIB_USE_ZLIB_IF_AVAILABLE "Uses ZLIB (if available) to enable Zlib compression support." ON)
@@ -88,9 +91,10 @@ option(HTTPLIB_COMPILE "If ON, uses a Python script to split the header into a c
 if(HTTPLIB_COMPILE)
 	set(HTTPLIB_IS_COMPILED TRUE)
 endif()
-
+option(HTTPLIB_TEST "Enables testing and builds tests" OFF)
 option(HTTPLIB_REQUIRE_BROTLI "Requires Brotli to be found & linked, or fails build." OFF)
 option(HTTPLIB_USE_BROTLI_IF_AVAILABLE "Uses Brotli (if available) to enable Brotli decompression support." ON)
+option(HTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN "Enable feature to load system certs from the Apple Keychain." ON)
 # Defaults to static library
 option(BUILD_SHARED_LIBS "Build the library as a shared library instead of static. Has no effect if using header-only." OFF)
 if (BUILD_SHARED_LIBS AND WIN32 AND HTTPLIB_COMPILE)
@@ -134,6 +138,10 @@ endif()
 # Just setting this variable here for people building in-tree
 if(Brotli_FOUND)
 	set(HTTPLIB_IS_USING_BROTLI TRUE)
+endif()
+
+if(HTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN)
+	set(HTTPLIB_IS_USING_CERTS_FROM_MACOSX_KEYCHAIN TRUE)
 endif()
 
 # Used for default, common dirs that the end-user can change (if needed)
@@ -205,6 +213,8 @@ target_link_libraries(${PROJECT_NAME} ${_INTERFACE_OR_PUBLIC}
 		$<$<PLATFORM_ID:Windows>:ws2_32>
 		$<$<PLATFORM_ID:Windows>:crypt32>
 		$<$<PLATFORM_ID:Windows>:cryptui>
+		# Needed for API from MacOS Security framework
+		"$<$<AND:$<PLATFORM_ID:Darwin>,$<BOOL:${HTTPLIB_IS_USING_OPENSSL}>,$<BOOL:${HTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN}>>:-framework CoreFoundation -framework Security>"
 		# Can't put multiple targets in a single generator expression or it bugs out.
 		$<$<BOOL:${HTTPLIB_IS_USING_BROTLI}>:Brotli::common>
 		$<$<BOOL:${HTTPLIB_IS_USING_BROTLI}>:Brotli::encoder>
@@ -219,6 +229,7 @@ target_compile_definitions(${PROJECT_NAME} ${_INTERFACE_OR_PUBLIC}
 	$<$<BOOL:${HTTPLIB_IS_USING_BROTLI}>:CPPHTTPLIB_BROTLI_SUPPORT>
 	$<$<BOOL:${HTTPLIB_IS_USING_ZLIB}>:CPPHTTPLIB_ZLIB_SUPPORT>
 	$<$<BOOL:${HTTPLIB_IS_USING_OPENSSL}>:CPPHTTPLIB_OPENSSL_SUPPORT>
+	$<$<AND:$<PLATFORM_ID:Darwin>,$<BOOL:${HTTPLIB_IS_USING_OPENSSL}>,$<BOOL:${HTTPLIB_IS_USING_CERTS_FROM_MACOSX_KEYCHAIN}>>:CPPHTTPLIB_USE_CERTS_FROM_MACOSX_KEYCHAIN>
 )
 
 # CMake configuration files installation directory
@@ -232,8 +243,6 @@ configure_package_config_file("${PROJECT_NAME}Config.cmake.in"
 	INSTALL_DESTINATION "${_TARGET_INSTALL_CMAKEDIR}"
 	# Passes the includedir install path
 	PATH_VARS CMAKE_INSTALL_FULL_INCLUDEDIR
-	# There aren't any components, so don't use the macro
-	NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 
 if(HTTPLIB_COMPILE)
@@ -278,3 +287,8 @@ install(EXPORT httplibTargets
 	NAMESPACE ${PROJECT_NAME}::
 	DESTINATION ${_TARGET_INSTALL_CMAKEDIR}
 )
+
+if(HTTPLIB_TEST)
+    include(CTest)
+    add_subdirectory(test)
+endif()

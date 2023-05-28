@@ -46,7 +46,7 @@ MultipartFormData &get_file_value(MultipartFormDataItems &files,
   return *it;
 #else
   if (it != files.end()) { return *it; }
-  throw std::runtime_error("invalid mulitpart form data name error");
+  throw std::runtime_error("invalid multipart form data name error");
 #endif
 }
 
@@ -167,6 +167,40 @@ TEST(ParamsToQueryTest, ConvertParamsToQuery) {
   dic.emplace("key3", "val3");
 
   EXPECT_EQ(detail::params_to_query_str(dic), "key1=val1&key2=val2&key3=val3");
+}
+
+TEST(ParseMultipartBoundaryTest, DefaultValue) {
+  string content_type = "multipart/form-data; boundary=something";
+  string boundary;
+  auto ret = detail::parse_multipart_boundary(content_type, boundary);
+  EXPECT_TRUE(ret);
+  EXPECT_EQ(boundary, "something");
+}
+
+TEST(ParseMultipartBoundaryTest, ValueWithQuote) {
+  string content_type = "multipart/form-data; boundary=\"gc0pJq0M:08jU534c0p\"";
+  string boundary;
+  auto ret = detail::parse_multipart_boundary(content_type, boundary);
+  EXPECT_TRUE(ret);
+  EXPECT_EQ(boundary, "gc0pJq0M:08jU534c0p");
+}
+
+TEST(ParseMultipartBoundaryTest, ValueWithCharset) {
+  string content_type =
+      "multipart/mixed; boundary=THIS_STRING_SEPARATES;charset=UTF-8";
+  string boundary;
+  auto ret = detail::parse_multipart_boundary(content_type, boundary);
+  EXPECT_TRUE(ret);
+  EXPECT_EQ(boundary, "THIS_STRING_SEPARATES");
+}
+
+TEST(ParseMultipartBoundaryTest, ValueWithQuotesAndCharset) {
+  string content_type =
+      "multipart/mixed; boundary=\"cpp-httplib-multipart-data\"; charset=UTF-8";
+  string boundary;
+  auto ret = detail::parse_multipart_boundary(content_type, boundary);
+  EXPECT_TRUE(ret);
+  EXPECT_EQ(boundary, "cpp-httplib-multipart-data");
 }
 
 TEST(GetHeaderValueTest, DefaultValue) {
@@ -596,7 +630,7 @@ TEST(ConnectionErrorTest, InvalidHostCheckResultErrorToString) {
   ASSERT_TRUE(!res);
   stringstream s;
   s << "error code: " << res.error();
-  EXPECT_EQ("error code: Connection (2)", s.str());
+  EXPECT_EQ("error code: Could not establish connection (2)", s.str());
 }
 
 TEST(ConnectionErrorTest, InvalidPort) {
@@ -779,7 +813,7 @@ TEST(DigestAuthTest, FromHTTPWatch_Online) {
     }
 
     // NOTE: Until httpbin.org fixes issue #46, the following test is commented
-    // out. Plese see https://httpbin.org/digest-auth/auth/hello/world
+    // out. Please see https://httpbin.org/digest-auth/auth/hello/world
     // cli.set_digest_auth("bad", "world");
     // for (auto path : paths) {
     //   auto res = cli.Get(path.c_str());
@@ -967,18 +1001,18 @@ TEST(ReceiveSignals, Signal) {
     port = svr.bind_to_any_port("localhost");
     svr.listen_after_bind();
   });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  svr.wait_until_ready();
 
   ASSERT_TRUE(svr.is_running());
   pthread_kill(thread.native_handle(), SIGINT);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   ASSERT_TRUE(svr.is_running());
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 #endif
 
@@ -1004,6 +1038,14 @@ TEST(RedirectToDifferentPort, Redirect) {
     svr2_port = svr2.bind_to_any_port("localhost");
     svr2.listen_after_bind();
   });
+  auto se = detail::scope_exit([&] {
+    svr2.stop();
+    thread2.join();
+    svr1.stop();
+    thread1.join();
+    ASSERT_FALSE(svr2.is_running());
+    ASSERT_FALSE(svr1.is_running());
+  });
 
   while (!svr1.is_running() || !svr2.is_running()) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -1019,13 +1061,6 @@ TEST(RedirectToDifferentPort, Redirect) {
   ASSERT_TRUE(res);
   EXPECT_EQ(200, res->status);
   EXPECT_EQ("Hello World!", res->body);
-
-  svr1.stop();
-  svr2.stop();
-  thread1.join();
-  thread2.join();
-  ASSERT_FALSE(svr1.is_running());
-  ASSERT_FALSE(svr2.is_running());
 }
 
 TEST(RedirectFromPageWithContent, Redirect) {
@@ -1041,10 +1076,13 @@ TEST(RedirectFromPageWithContent, Redirect) {
   });
 
   auto th = std::thread([&]() { svr.listen("localhost", PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    th.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1077,10 +1115,6 @@ TEST(RedirectFromPageWithContent, Redirect) {
     EXPECT_EQ(302, res->status);
     EXPECT_EQ("___", body);
   }
-
-  svr.stop();
-  th.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(RedirectFromPageWithContentIP6, Redirect) {
@@ -1101,6 +1135,11 @@ TEST(RedirectFromPageWithContentIP6, Redirect) {
   });
 
   auto th = std::thread([&]() { svr.listen("::1", 1234); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    th.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // When IPV6 support isn't available svr.listen("::1", 1234) never
   // actually starts anything, so the condition !svr.is_running() will
@@ -1144,10 +1183,6 @@ TEST(RedirectFromPageWithContentIP6, Redirect) {
     EXPECT_EQ(302, res->status);
     EXPECT_EQ("___", body);
   }
-
-  svr.stop();
-  th.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(PathUrlEncodeTest, PathUrlEncode) {
@@ -1164,6 +1199,11 @@ TEST(PathUrlEncodeTest, PathUrlEncode) {
   });
 
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1180,13 +1220,9 @@ TEST(PathUrlEncodeTest, PathUrlEncode) {
     // into spaces.
     EXPECT_EQ("explicitly encoded", res->body);
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
-TEST(BindServerTest, BindDualStack) {
+TEST(BindServerTest, DISABLED_BindDualStack) {
   Server svr;
 
   svr.Get("/1", [&](const Request & /*req*/, Response &res) {
@@ -1194,6 +1230,11 @@ TEST(BindServerTest, BindDualStack) {
   });
 
   auto thread = std::thread([&]() { svr.listen("::", PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1214,9 +1255,6 @@ TEST(BindServerTest, BindDualStack) {
     EXPECT_EQ(200, res->status);
     EXPECT_EQ("Hello World!", res->body);
   }
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(BindServerTest, BindAndListenSeparately) {
@@ -1264,6 +1302,11 @@ TEST(ErrorHandlerTest, ContentLength) {
   });
 
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1278,10 +1321,6 @@ TEST(ErrorHandlerTest, ContentLength) {
     EXPECT_EQ("26", res->get_header_value("Content-Length"));
     EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", res->body);
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 #ifndef CPPHTTPLIB_NO_EXCEPTIONS
@@ -1305,6 +1344,11 @@ TEST(ExceptionHandlerTest, ContentLength) {
   });
 
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1332,10 +1376,6 @@ TEST(ExceptionHandlerTest, ContentLength) {
       EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", res->body);
     }
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 #endif
 
@@ -1345,6 +1385,11 @@ TEST(NoContentTest, ContentLength) {
   svr.Get("/hi",
           [](const Request & /*req*/, Response &res) { res.status = 204; });
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1357,10 +1402,6 @@ TEST(NoContentTest, ContentLength) {
     EXPECT_EQ(204, res->status);
     EXPECT_EQ("0", res->get_header_value("Content-Length"));
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(RoutingHandlerTest, PreRoutingHandler) {
@@ -1395,6 +1436,11 @@ TEST(RoutingHandlerTest, PreRoutingHandler) {
   });
 
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1448,10 +1494,6 @@ TEST(RoutingHandlerTest, PreRoutingHandler) {
     EXPECT_EQ(0U, res->get_header_value_count("PRE_ROUTING"));
     EXPECT_EQ(0U, res->get_header_value_count("POST_ROUTING"));
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(InvalidFormatTest, StatusCode) {
@@ -1463,6 +1505,11 @@ TEST(InvalidFormatTest, StatusCode) {
   });
 
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -1473,10 +1520,6 @@ TEST(InvalidFormatTest, StatusCode) {
     auto res = cli.Get("/hi");
     ASSERT_FALSE(res);
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(URLFragmentTest, WithFragment) {
@@ -1487,6 +1530,11 @@ TEST(URLFragmentTest, WithFragment) {
   });
 
   auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
@@ -1501,10 +1549,6 @@ TEST(URLFragmentTest, WithFragment) {
     EXPECT_TRUE(res);
     EXPECT_EQ(404, res->status);
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 class ServerTest : public ::testing::Test {
@@ -1650,7 +1694,6 @@ protected:
              [&](const Request & /*req*/, Response &res) {
                res.set_chunked_content_provider(
                    "text/plain", [](size_t /*offset*/, DataSink &sink) {
-                     EXPECT_TRUE(sink.is_writable());
                      sink.os << "123";
                      sink.os << "456";
                      sink.os << "789";
@@ -1664,12 +1707,35 @@ protected:
                res.set_chunked_content_provider(
                    "text/plain",
                    [i](size_t /*offset*/, DataSink &sink) {
-                     EXPECT_TRUE(sink.is_writable());
                      switch (*i) {
                      case 0: sink.os << "123"; break;
                      case 1: sink.os << "456"; break;
                      case 2: sink.os << "789"; break;
                      case 3: sink.done(); break;
+                     }
+                     (*i)++;
+                     return true;
+                   },
+                   [i](bool success) {
+                     EXPECT_TRUE(success);
+                     delete i;
+                   });
+             })
+        .Get("/streamed-chunked-with-trailer",
+             [&](const Request & /*req*/, Response &res) {
+               auto i = new int(0);
+               res.set_header("Trailer", "Dummy1, Dummy2");
+               res.set_chunked_content_provider(
+                   "text/plain",
+                   [i](size_t /*offset*/, DataSink &sink) {
+                     switch (*i) {
+                     case 0: sink.os << "123"; break;
+                     case 1: sink.os << "456"; break;
+                     case 2: sink.os << "789"; break;
+                     case 3: {
+                       sink.done_with_trailer(
+                           {{"Dummy1", "DummyVal1"}, {"Dummy2", "DummyVal2"}});
+                     } break;
                      }
                      (*i)++;
                      return true;
@@ -1694,7 +1760,6 @@ protected:
                res.set_content_provider(
                    data->size(), "text/plain",
                    [data](size_t offset, size_t length, DataSink &sink) {
-                     EXPECT_TRUE(sink.is_writable());
                      size_t DATA_CHUNK_SIZE = 4;
                      const auto &d = *data;
                      auto out_len =
@@ -1714,8 +1779,6 @@ protected:
                res.set_content_provider(
                    size_t(-1), "text/plain",
                    [](size_t /*offset*/, size_t /*length*/, DataSink &sink) {
-                     if (!sink.is_writable()) return false;
-
                      sink.os << "data_chunk";
                      return true;
                    });
@@ -1770,6 +1833,40 @@ protected:
                   EXPECT_TRUE(file.filename.empty());
                   EXPECT_EQ(0u, file.content.size());
                   EXPECT_EQ("application/json  tmp-string", file.content_type);
+                }
+              })
+        .Post("/multipart/multi_file_values",
+              [&](const Request &req, Response & /*res*/) {
+                EXPECT_EQ(5u, req.files.size());
+                ASSERT_TRUE(!req.has_file("???"));
+                ASSERT_TRUE(req.body.empty());
+
+                {
+                  const auto &text_value = req.get_file_values("text");
+                  EXPECT_EQ(1u, text_value.size());
+                  auto &text = text_value[0];
+                  EXPECT_TRUE(text.filename.empty());
+                  EXPECT_EQ("default text", text.content);
+                }
+                {
+                  const auto &text1_values = req.get_file_values("multi_text1");
+                  EXPECT_EQ(2u, text1_values.size());
+                  EXPECT_EQ("aaaaa", text1_values[0].content);
+                  EXPECT_EQ("bbbbb", text1_values[1].content);
+                }
+
+                {
+                  const auto &file1_values = req.get_file_values("multi_file1");
+                  EXPECT_EQ(2u, file1_values.size());
+                  auto file1 = file1_values[0];
+                  EXPECT_EQ(file1.filename, "hello.txt");
+                  EXPECT_EQ(file1.content_type, "text/plain");
+                  EXPECT_EQ("h\ne\n\nl\nl\no\n", file1.content);
+
+                  auto file2 = file1_values[1];
+                  EXPECT_EQ(file2.filename, "world.json");
+                  EXPECT_EQ(file2.content_type, "application/json");
+                  EXPECT_EQ("{\n  \"world\", true\n}\n", file2.content);
                 }
               })
         .Post("/empty",
@@ -2616,6 +2713,24 @@ TEST_F(ServerTest, MultipartFormData) {
   EXPECT_EQ(200, res->status);
 }
 
+TEST_F(ServerTest, MultipartFormDataMultiFileValues) {
+  MultipartFormDataItems items = {
+      {"text", "default text", "", ""},
+
+      {"multi_text1", "aaaaa", "", ""},
+      {"multi_text1", "bbbbb", "", ""},
+
+      {"multi_file1", "h\ne\n\nl\nl\no\n", "hello.txt", "text/plain"},
+      {"multi_file1", "{\n  \"world\", true\n}\n", "world.json",
+       "application/json"},
+  };
+
+  auto res = cli_.Post("/multipart/multi_file_values", items);
+
+  ASSERT_TRUE(res);
+  EXPECT_EQ(200, res->status);
+}
+
 TEST_F(ServerTest, CaseInsensitiveHeaderName) {
   auto res = cli_.Get("/hi");
   ASSERT_TRUE(res);
@@ -2748,19 +2863,24 @@ TEST_F(ServerTest, GetStreamedEndless) {
 }
 
 TEST_F(ServerTest, ClientStop) {
+  std::atomic_size_t count{4};
   std::vector<std::thread> threads;
-  for (auto i = 0; i < 3; i++) {
-    threads.emplace_back(thread([&]() {
+
+  for (auto i = count.load(); i != 0; --i) {
+    threads.emplace_back([&]() {
       auto res = cli_.Get("/streamed-cancel",
                           [&](const char *, uint64_t) { return true; });
+
+      --count;
+
       ASSERT_TRUE(!res);
       EXPECT_TRUE(res.error() == Error::Canceled ||
                   res.error() == Error::Read || res.error() == Error::Write);
-    }));
+    });
   }
 
   std::this_thread::sleep_for(std::chrono::seconds(2));
-  while (cli_.is_socket_open()) {
+  while (count != 0) {
     cli_.stop();
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
@@ -2841,6 +2961,15 @@ TEST_F(ServerTest, GetStreamedChunked2) {
   EXPECT_EQ(std::string("123456789"), res->body);
 }
 
+TEST_F(ServerTest, GetStreamedChunkedWithTrailer) {
+  auto res = cli_.Get("/streamed-chunked-with-trailer");
+  ASSERT_TRUE(res);
+  EXPECT_EQ(200, res->status);
+  EXPECT_EQ(std::string("123456789"), res->body);
+  EXPECT_EQ(std::string("DummyVal1"), res->get_header_value("Dummy1"));
+  EXPECT_EQ(std::string("DummyVal2"), res->get_header_value("Dummy2"));
+}
+
 TEST_F(ServerTest, LargeChunkedPost) {
   Request req;
   req.method = "POST";
@@ -2897,12 +3026,9 @@ TEST_F(ServerTest, HTTPResponseSplitting) {
 }
 
 TEST_F(ServerTest, SlowRequest) {
-  request_threads_.push_back(
-      std::thread([=]() { auto res = cli_.Get("/slow"); }));
-  request_threads_.push_back(
-      std::thread([=]() { auto res = cli_.Get("/slow"); }));
-  request_threads_.push_back(
-      std::thread([=]() { auto res = cli_.Get("/slow"); }));
+  request_threads_.emplace_back([this]() { auto res = cli_.Get("/slow"); });
+  request_threads_.emplace_back([this]() { auto res = cli_.Get("/slow"); });
+  request_threads_.emplace_back([this]() { auto res = cli_.Get("/slow"); });
 }
 
 #if 0
@@ -2952,7 +3078,6 @@ TEST_F(ServerTest, PutWithContentProvider) {
   auto res = cli_.Put(
       "/put", 3,
       [](size_t /*offset*/, size_t /*length*/, DataSink &sink) {
-        EXPECT_TRUE(sink.is_writable());
         sink.os << "PUT";
         return true;
       },
@@ -2979,7 +3104,6 @@ TEST_F(ServerTest, PutWithContentProviderWithoutLength) {
   auto res = cli_.Put(
       "/put",
       [](size_t /*offset*/, DataSink &sink) {
-        EXPECT_TRUE(sink.is_writable());
         sink.os << "PUT";
         sink.done();
         return true;
@@ -3006,7 +3130,6 @@ TEST_F(ServerTest, PutWithContentProviderWithGzip) {
   auto res = cli_.Put(
       "/put", 3,
       [](size_t /*offset*/, size_t /*length*/, DataSink &sink) {
-        EXPECT_TRUE(sink.is_writable());
         sink.os << "PUT";
         return true;
       },
@@ -3035,7 +3158,6 @@ TEST_F(ServerTest, PutWithContentProviderWithoutLengthWithGzip) {
   auto res = cli_.Put(
       "/put",
       [](size_t /*offset*/, DataSink &sink) {
-        EXPECT_TRUE(sink.is_writable());
         sink.os << "PUT";
         sink.done();
         return true;
@@ -3143,7 +3265,7 @@ TEST(GzipDecompressor, ChunkedDecompression) {
   {
     httplib::detail::gzip_decompressor decompressor;
 
-    // Chunk size is chosen specificaly to have a decompressed chunk size equal
+    // Chunk size is chosen specifically to have a decompressed chunk size equal
     // to 16384 bytes 16384 bytes is the size of decompressor output buffer
     size_t chunk_size = 130;
     for (size_t chunk_begin = 0; chunk_begin < compressed_data.size();
@@ -3292,7 +3414,7 @@ TEST_F(ServerTest, PostContentReceiver) {
   ASSERT_EQ("content", res->body);
 }
 
-TEST_F(ServerTest, PostMulitpartFilsContentReceiver) {
+TEST_F(ServerTest, PostMultipartFileContentReceiver) {
   MultipartFormDataItems items = {
       {"text1", "text default", "", ""},
       {"text2", "aωb", "", ""},
@@ -3307,7 +3429,7 @@ TEST_F(ServerTest, PostMulitpartFilsContentReceiver) {
   EXPECT_EQ(200, res->status);
 }
 
-TEST_F(ServerTest, PostMulitpartPlusBoundary) {
+TEST_F(ServerTest, PostMultipartPlusBoundary) {
   MultipartFormDataItems items = {
       {"text1", "text default", "", ""},
       {"text2", "aωb", "", ""},
@@ -3630,9 +3752,13 @@ TEST(ServerRequestParsingTest, TrimWhitespaceFromHeaderValues) {
   });
 
   thread t = thread([&] { svr.listen(HOST, PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Only space and horizontal tab are whitespace. Make sure other whitespace-
   // like characters are not treated the same - use vertical tab and escape.
@@ -3642,8 +3768,6 @@ TEST(ServerRequestParsingTest, TrimWhitespaceFromHeaderValues) {
                           "\r\n";
 
   ASSERT_TRUE(send_request(5, req));
-  svr.stop();
-  t.join();
   EXPECT_EQ(header_value, "\v bar \x1B");
 }
 
@@ -3665,14 +3789,16 @@ static void test_raw_request(const std::string &req,
   svr.set_read_timeout(std::chrono::seconds(client_read_timeout_sec + 1));
   bool listen_thread_ok = false;
   thread t = thread([&] { listen_thread_ok = svr.listen(HOST, PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+    EXPECT_TRUE(listen_thread_ok);
+  });
+
+  svr.wait_until_ready();
 
   ASSERT_TRUE(send_request(client_read_timeout_sec, req, out));
-  svr.stop();
-  t.join();
-  EXPECT_TRUE(listen_thread_ok);
 }
 
 TEST(ServerRequestParsingTest, ReadHeadersRegexComplexity) {
@@ -3723,10 +3849,10 @@ TEST(ServerRequestParsingTest, ReadHeadersRegexComplexity2) {
       "&&&%%%");
 }
 
-TEST(ServerRequestParsingTest, ExcessiveWhitespaceInUnparseableHeaderLine) {
+TEST(ServerRequestParsingTest, ExcessiveWhitespaceInUnparsableHeaderLine) {
   // Make sure this doesn't crash the server.
   // In a previous version of the header line regex, the "\r" rendered the line
-  // unparseable and the regex engine repeatedly backtracked, trying to look for
+  // unparsable and the regex engine repeatedly backtracked, trying to look for
   // a new position where the leading white space ended and the field value
   // began.
   // The crash occurs with libc++ but not libstdc++.
@@ -3795,9 +3921,10 @@ TEST(ServerStopTest, StopServerWithChunkedTransmission) {
     res.set_header("Cache-Control", "no-cache");
     res.set_chunked_content_provider("text/event-stream", [](size_t offset,
                                                              DataSink &sink) {
-      char buffer[27];
-      auto size = static_cast<size_t>(sprintf(buffer, "data:%zd\n\n", offset));
-      auto ret = sink.write(buffer, size);
+      std::string s = "data:";
+      s += std::to_string(offset);
+      s += "\n\n";
+      auto ret = sink.write(s.data(), s.size());
       EXPECT_TRUE(ret);
       std::this_thread::sleep_for(std::chrono::seconds(1));
       return true;
@@ -3805,9 +3932,7 @@ TEST(ServerStopTest, StopServerWithChunkedTransmission) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  svr.wait_until_ready();
 
   Client client(HOST, PORT);
   const Headers headers = {{"Accept", "text/event-stream"}};
@@ -3817,16 +3942,49 @@ TEST(ServerStopTest, StopServerWithChunkedTransmission) {
         "/events", headers,
         [](const char * /*data*/, size_t /*len*/) -> bool { return true; });
   });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    get_thread.join();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(2));
+}
+
+TEST(ServerStopTest, ClientAccessAfterServerDown) {
+  httplib::Server svr;
+  svr.Post("/hi", [&](const httplib::Request & /*req*/,
+                      httplib::Response &res) { res.status = 200; });
+
+  auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  svr.wait_until_ready();
+
+  Client cli(HOST, PORT);
+
+  auto res = cli.Post("/hi", "data", "text/plain");
+
+  ASSERT_TRUE(res);
+  EXPECT_EQ(200, res->status);
 
   svr.stop();
-
-  listen_thread.join();
-  get_thread.join();
-
+  thread.join();
   ASSERT_FALSE(svr.is_running());
+
+  res = cli.Post("/hi", "data", "text/plain");
+  ASSERT_FALSE(res);
+}
+
+TEST(ServerStopTest, ListenFailure) {
+  Server svr;
+  auto t = thread([&]() {
+    auto ret = svr.listen("????", PORT);
+    EXPECT_FALSE(ret);
+  });
+  svr.wait_until_ready();
+  svr.stop();
+  t.join();
 }
 
 TEST(StreamingTest, NoContentLengthStreaming) {
@@ -3844,9 +4002,13 @@ TEST(StreamingTest, NoContentLengthStreaming) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto listen_se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   Client client(HOST, PORT);
 
@@ -3859,25 +4021,23 @@ TEST(StreamingTest, NoContentLengthStreaming) {
         });
     EXPECT_EQ("aaabbb", s);
   });
+  auto get_se = detail::scope_exit([&] { get_thread.join(); });
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-  svr.stop();
-
-  listen_thread.join();
-  get_thread.join();
-
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(MountTest, Unmount) {
   Server svr;
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -3909,10 +4069,6 @@ TEST(MountTest, Unmount) {
   res = cli.Get("/mount2/dir/test.html");
   ASSERT_TRUE(res);
   EXPECT_EQ(404, res->status);
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 #ifndef CPPHTTPLIB_NO_EXCEPTIONS
@@ -3928,9 +4084,13 @@ TEST(ExceptionTest, ThrowExceptionInHandler) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -3952,10 +4112,6 @@ TEST(ExceptionTest, ThrowExceptionInHandler) {
     ASSERT_TRUE(res->has_header("EXCEPTION_WHAT"));
     EXPECT_EQ("exception\\r\\n...", res->get_header_value("EXCEPTION_WHAT"));
   }
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 #endif
 
@@ -3972,9 +4128,13 @@ TEST(KeepAliveTest, ReadTimeout) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -3984,48 +4144,89 @@ TEST(KeepAliveTest, ReadTimeout) {
   cli.set_read_timeout(std::chrono::seconds(1));
 
   auto resa = cli.Get("/a");
-  ASSERT_TRUE(!resa);
+  ASSERT_FALSE(resa);
   EXPECT_EQ(Error::Read, resa.error());
 
   auto resb = cli.Get("/b");
   ASSERT_TRUE(resb);
   EXPECT_EQ(200, resb->status);
   EXPECT_EQ("b", resb->body);
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(KeepAliveTest, Issue1041) {
-  const auto resourcePath = "/hi";
-
   Server svr;
   svr.set_keep_alive_timeout(3);
 
-  svr.Get(resourcePath, [](const httplib::Request &, httplib::Response &res) {
+  svr.Get("/hi", [](const httplib::Request &, httplib::Response &res) {
     res.set_content("Hello World!", "text/plain");
   });
 
-  auto a2 = std::async(std::launch::async, [&svr] { svr.listen(HOST, PORT); });
+  auto listen_thread = std::thread([&svr] { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   Client cli(HOST, PORT);
   cli.set_keep_alive(true);
 
-  auto result = cli.Get(resourcePath);
+  auto result = cli.Get("/hi");
   ASSERT_TRUE(result);
   EXPECT_EQ(200, result->status);
 
   std::this_thread::sleep_for(std::chrono::seconds(5));
 
-  result = cli.Get(resourcePath);
+  result = cli.Get("/hi");
+  ASSERT_TRUE(result);
+  EXPECT_EQ(200, result->status);
+}
+
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+TEST(KeepAliveTest, SSLClientReconnection) {
+  SSLServer svr(SERVER_CERT_FILE, SERVER_PRIVATE_KEY_FILE);
+  ASSERT_TRUE(svr.is_valid());
+  svr.set_keep_alive_timeout(1);
+
+  svr.Get("/hi", [](const httplib::Request &, httplib::Response &res) {
+    res.set_content("Hello World!", "text/plain");
+  });
+
+  auto listen_thread = std::thread([&svr] { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  SSLClient cli(HOST, PORT);
+  cli.enable_server_certificate_verification(false);
+  cli.set_keep_alive(true);
+
+  auto result = cli.Get("/hi");
   ASSERT_TRUE(result);
   EXPECT_EQ(200, result->status);
 
-  svr.stop();
-  a2.wait();
+  result = cli.Get("/hi");
+  ASSERT_TRUE(result);
+  EXPECT_EQ(200, result->status);
+
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+
+  // Recoonect
+  result = cli.Get("/hi");
+  ASSERT_TRUE(result);
+  EXPECT_EQ(200, result->status);
+
+  result = cli.Get("/hi");
+  ASSERT_TRUE(result);
+  EXPECT_EQ(200, result->status);
 }
+#endif
 
 TEST(ClientProblemDetectionTest, ContentProvider) {
   Server svr;
@@ -4044,25 +4245,41 @@ TEST(ClientProblemDetectionTest, ContentProvider) {
         [](bool success) { ASSERT_FALSE(success); });
   });
 
+  svr.Get("/empty", [&](const Request & /*req*/, Response &res) {
+    res.set_content_provider(
+        0, "text/plain",
+        [&](size_t /*offset*/, size_t /*length*/, DataSink & /*sink*/) -> bool {
+          EXPECT_TRUE(false);
+          return true;
+        },
+        [](bool success) { ASSERT_FALSE(success); });
+  });
+
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   Client cli("localhost", PORT);
 
-  auto res = cli.Get("/hi", [&](const char * /*data*/, size_t /*data_length*/) {
-    return false;
-  });
+  {
+    auto res = cli.Get("/hi", [&](const char * /*data*/,
+                                  size_t /*data_length*/) { return false; });
+    ASSERT_FALSE(res);
+  }
 
-  ASSERT_FALSE(res);
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
+  {
+    auto res = cli.Get("/empty", [&](const char * /*data*/,
+                                     size_t /*data_length*/) { return false; });
+    ASSERT_TRUE(res);
+  }
 }
 
 TEST(ErrorHandlerWithContentProviderTest, ErrorHandler) {
@@ -4079,9 +4296,13 @@ TEST(ErrorHandlerWithContentProviderTest, ErrorHandler) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -4092,10 +4313,6 @@ TEST(ErrorHandlerWithContentProviderTest, ErrorHandler) {
   ASSERT_TRUE(res);
   EXPECT_EQ(404, res->status);
   EXPECT_EQ("helloworld", res->body);
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(GetWithParametersTest, GetWithParameters) {
@@ -4120,9 +4337,13 @@ TEST(GetWithParametersTest, GetWithParameters) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen(HOST, PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   {
@@ -4155,10 +4376,6 @@ TEST(GetWithParametersTest, GetWithParameters) {
     ASSERT_TRUE(res);
     EXPECT_EQ(200, res->status);
   }
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(GetWithParametersTest, GetWithParameters2) {
@@ -4170,9 +4387,13 @@ TEST(GetWithParametersTest, GetWithParameters2) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   Client cli("localhost", PORT);
@@ -4190,10 +4411,6 @@ TEST(GetWithParametersTest, GetWithParameters2) {
   ASSERT_TRUE(res);
   EXPECT_EQ(200, res->status);
   EXPECT_EQ("world", body);
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 TEST(ClientDefaultHeadersTest, DefaultHeaders_Online) {
@@ -4225,9 +4442,13 @@ TEST(ServerDefaultHeadersTest, DefaultHeaders) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   Client cli("localhost", PORT);
@@ -4238,10 +4459,6 @@ TEST(ServerDefaultHeadersTest, DefaultHeaders) {
   EXPECT_EQ(200, res->status);
   EXPECT_EQ("ok", res->body);
   EXPECT_EQ("World", res->get_header_value("Hello"));
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
@@ -4259,9 +4476,13 @@ TEST(KeepAliveTest, ReadTimeoutSSL) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -4279,10 +4500,6 @@ TEST(KeepAliveTest, ReadTimeoutSSL) {
   ASSERT_TRUE(resb);
   EXPECT_EQ(200, resb->status);
   EXPECT_EQ("b", resb->body);
-
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 #endif
 
@@ -4442,7 +4659,7 @@ TEST(SSLClientTest, ServerNameIndication_Online) {
 }
 
 TEST(SSLClientTest, ServerCertificateVerification1_Online) {
-  SSLClient cli("google.com");
+  Client cli("https://google.com");
   auto res = cli.Get("/");
   ASSERT_TRUE(res);
   ASSERT_EQ(301, res->status);
@@ -4476,6 +4693,11 @@ TEST(SSLClientTest, ServerCertificateVerification4) {
   });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen("127.0.0.1", PORT)); });
+  auto se = detail::scope_exit([&] {
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli("127.0.0.1", PORT);
@@ -4486,8 +4708,6 @@ TEST(SSLClientTest, ServerCertificateVerification4) {
   auto res = cli.Get("/test");
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
-
-  t.join();
 }
 
 TEST(SSLClientTest, WildcardHostNameMatch_Online) {
@@ -4546,6 +4766,11 @@ TEST(SSLClientServerTest, ClientCertPresent) {
   });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen(HOST, PORT)); });
+  auto se = detail::scope_exit([&] {
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli(HOST, PORT, CLIENT_CERT_FILE, CLIENT_PRIVATE_KEY_FILE);
@@ -4555,8 +4780,6 @@ TEST(SSLClientServerTest, ClientCertPresent) {
   auto res = cli.Get("/test");
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
-
-  t.join();
 }
 
 #if !defined(_WIN32) || defined(OPENSSL_USE_APPLINK)
@@ -4618,6 +4841,11 @@ TEST(SSLClientServerTest, MemoryClientCertPresent) {
   });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen(HOST, PORT)); });
+  auto se = detail::scope_exit([&] {
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli(HOST, PORT, client_cert, client_private_key);
@@ -4632,8 +4860,6 @@ TEST(SSLClientServerTest, MemoryClientCertPresent) {
   EVP_PKEY_free(server_private_key);
   X509_free(client_cert);
   EVP_PKEY_free(client_private_key);
-
-  t.join();
 }
 #endif
 
@@ -4645,6 +4871,12 @@ TEST(SSLClientServerTest, ClientCertMissing) {
   svr.Get("/test", [&](const Request &, Response &) { ASSERT_TRUE(false); });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen(HOST, PORT)); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli(HOST, PORT);
@@ -4652,10 +4884,6 @@ TEST(SSLClientServerTest, ClientCertMissing) {
   cli.set_connection_timeout(30);
   ASSERT_TRUE(!res);
   EXPECT_EQ(Error::SSLServerVerification, res.error());
-
-  svr.stop();
-
-  t.join();
 }
 
 TEST(SSLClientServerTest, TrustDirOptional) {
@@ -4668,6 +4896,11 @@ TEST(SSLClientServerTest, TrustDirOptional) {
   });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen(HOST, PORT)); });
+  auto se = detail::scope_exit([&] {
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli(HOST, PORT, CLIENT_CERT_FILE, CLIENT_PRIVATE_KEY_FILE);
@@ -4677,8 +4910,6 @@ TEST(SSLClientServerTest, TrustDirOptional) {
   auto res = cli.Get("/test");
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
-
-  t.join();
 }
 
 TEST(SSLClientServerTest, SSLConnectTimeout) {
@@ -4711,6 +4942,13 @@ TEST(SSLClientServerTest, SSLConnectTimeout) {
   });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen(HOST, PORT)); });
+  auto se = detail::scope_exit([&] {
+    svr.stop_ = true;
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli(HOST, PORT, CLIENT_CERT_FILE, CLIENT_PRIVATE_KEY_FILE);
@@ -4720,10 +4958,6 @@ TEST(SSLClientServerTest, SSLConnectTimeout) {
   auto res = cli.Get("/test");
   ASSERT_TRUE(!res);
   EXPECT_EQ(Error::SSLConnection, res.error());
-
-  svr.stop_ = true;
-  svr.stop();
-  t.join();
 }
 
 TEST(SSLClientServerTest, CustomizeServerSSLCtx) {
@@ -4782,6 +5016,11 @@ TEST(SSLClientServerTest, CustomizeServerSSLCtx) {
   });
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen(HOST, PORT)); });
+  auto se = detail::scope_exit([&] {
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   SSLClient cli(HOST, PORT, CLIENT_CERT_FILE, CLIENT_PRIVATE_KEY_FILE);
@@ -4791,8 +5030,6 @@ TEST(SSLClientServerTest, CustomizeServerSSLCtx) {
   auto res = cli.Get("/test");
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
-
-  t.join();
 }
 
 // Disabled due to the out-of-memory problem on GitHub Actions Workflows
@@ -4816,9 +5053,13 @@ TEST(SSLClientServerTest, DISABLED_LargeDataTransfer) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // client POST
   SSLClient cli("localhost", PORT);
@@ -4832,11 +5073,6 @@ TEST(SSLClientServerTest, DISABLED_LargeDataTransfer) {
   EXPECT_EQ(200, res->status);
   EXPECT_EQ(large_size_byte, res->body.size());
   EXPECT_EQ(0, std::memcmp(binary.data(), res->body.data(), large_size_byte));
-
-  // cleanup
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 #endif
 
@@ -4883,10 +5119,13 @@ TEST(ClientImplMethods, GetSocketTest) {
   });
 
   auto thread = std::thread([&]() { svr.listen("127.0.0.1", 3333); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
 
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  }
+  svr.wait_until_ready();
 
   {
     httplib::Client cli("http://127.0.0.1:3333");
@@ -4907,10 +5146,6 @@ TEST(ClientImplMethods, GetSocketTest) {
     EXPECT_EQ(200, res->status);
     ASSERT_TRUE(cli.socket() != INVALID_SOCKET);
   }
-
-  svr.stop();
-  thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 
 // Disabled due to out-of-memory problem on GitHub Actions
@@ -4927,9 +5162,14 @@ TEST(ServerLargeContentTest, DISABLED_SendLargeContent) {
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen(HOST, PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    listen_thread.join();
+    if (content) free(content);
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   // Give GET time to get a few messages.
   std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -4939,11 +5179,6 @@ TEST(ServerLargeContentTest, DISABLED_SendLargeContent) {
   ASSERT_TRUE(res);
   EXPECT_EQ(200, res->status);
   EXPECT_EQ(content_size, res->body.length());
-
-  free(content);
-  svr.stop();
-  listen_thread.join();
-  ASSERT_FALSE(svr.is_running());
 }
 #endif
 
@@ -5067,6 +5302,12 @@ TEST(HttpToHttpsRedirectTest, CertFile) {
 
   thread t = thread([&]() { ASSERT_TRUE(svr.listen("127.0.0.1", PORT)); });
   thread t2 = thread([&]() { ASSERT_TRUE(ssl_svr.listen("127.0.0.1", 1235)); });
+  auto se = detail::scope_exit([&] {
+    t2.join();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
   Client cli("127.0.0.1", PORT);
@@ -5078,9 +5319,6 @@ TEST(HttpToHttpsRedirectTest, CertFile) {
   auto res = cli.Get("/index");
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
-
-  t.join();
-  t2.join();
 }
 
 TEST(MultipartFormDataTest, LargeData) {
@@ -5119,9 +5357,13 @@ TEST(MultipartFormDataTest, LargeData) {
   });
 
   auto t = std::thread([&]() { svr.listen("localhost", 8080); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   {
@@ -5141,9 +5383,249 @@ TEST(MultipartFormDataTest, LargeData) {
     ASSERT_TRUE(res);
     ASSERT_EQ(200, res->status);
   }
+}
 
-  svr.stop();
-  t.join();
+TEST(MultipartFormDataTest, DataProviderItems) {
+
+  std::random_device seed_gen;
+  std::mt19937 random(seed_gen());
+
+  std::string rand1;
+  rand1.resize(1000);
+  std::generate(rand1.begin(), rand1.end(), [&]() { return random(); });
+
+  std::string rand2;
+  rand2.resize(3000);
+  std::generate(rand2.begin(), rand2.end(), [&]() { return random(); });
+
+  SSLServer svr(SERVER_CERT_FILE, SERVER_PRIVATE_KEY_FILE);
+
+  svr.Post("/post-none", [&](const Request &req, Response & /*res*/,
+                             const ContentReader &content_reader) {
+    ASSERT_FALSE(req.is_multipart_form_data());
+
+    std::string body;
+    content_reader([&](const char *data, size_t data_length) {
+      body.append(data, data_length);
+      return true;
+    });
+
+    EXPECT_EQ(body, "");
+  });
+
+  svr.Post("/post-items", [&](const Request &req, Response & /*res*/,
+                              const ContentReader &content_reader) {
+    ASSERT_TRUE(req.is_multipart_form_data());
+    MultipartFormDataItems files;
+    content_reader(
+        [&](const MultipartFormData &file) {
+          files.push_back(file);
+          return true;
+        },
+        [&](const char *data, size_t data_length) {
+          files.back().content.append(data, data_length);
+          return true;
+        });
+
+    ASSERT_TRUE(files.size() == 2);
+
+    EXPECT_EQ(std::string(files[0].name), "name1");
+    EXPECT_EQ(files[0].content, "Testing123");
+    EXPECT_EQ(files[0].filename, "filename1");
+    EXPECT_EQ(files[0].content_type, "application/octet-stream");
+
+    EXPECT_EQ(files[1].name, "name2");
+    EXPECT_EQ(files[1].content, "Testing456");
+    EXPECT_EQ(files[1].filename, "");
+    EXPECT_EQ(files[1].content_type, "");
+  });
+
+  svr.Post("/post-providers", [&](const Request &req, Response & /*res*/,
+                                  const ContentReader &content_reader) {
+    ASSERT_TRUE(req.is_multipart_form_data());
+    MultipartFormDataItems files;
+    content_reader(
+        [&](const MultipartFormData &file) {
+          files.push_back(file);
+          return true;
+        },
+        [&](const char *data, size_t data_length) {
+          files.back().content.append(data, data_length);
+          return true;
+        });
+
+    ASSERT_TRUE(files.size() == 2);
+
+    EXPECT_EQ(files[0].name, "name3");
+    EXPECT_EQ(files[0].content, rand1);
+    EXPECT_EQ(files[0].filename, "filename3");
+    EXPECT_EQ(files[0].content_type, "");
+
+    EXPECT_EQ(files[1].name, "name4");
+    EXPECT_EQ(files[1].content, rand2);
+    EXPECT_EQ(files[1].filename, "filename4");
+    EXPECT_EQ(files[1].content_type, "");
+  });
+
+  svr.Post("/post-both", [&](const Request &req, Response & /*res*/,
+                             const ContentReader &content_reader) {
+    ASSERT_TRUE(req.is_multipart_form_data());
+    MultipartFormDataItems files;
+    content_reader(
+        [&](const MultipartFormData &file) {
+          files.push_back(file);
+          return true;
+        },
+        [&](const char *data, size_t data_length) {
+          files.back().content.append(data, data_length);
+          return true;
+        });
+
+    ASSERT_TRUE(files.size() == 4);
+
+    EXPECT_EQ(std::string(files[0].name), "name1");
+    EXPECT_EQ(files[0].content, "Testing123");
+    EXPECT_EQ(files[0].filename, "filename1");
+    EXPECT_EQ(files[0].content_type, "application/octet-stream");
+
+    EXPECT_EQ(files[1].name, "name2");
+    EXPECT_EQ(files[1].content, "Testing456");
+    EXPECT_EQ(files[1].filename, "");
+    EXPECT_EQ(files[1].content_type, "");
+
+    EXPECT_EQ(files[2].name, "name3");
+    EXPECT_EQ(files[2].content, rand1);
+    EXPECT_EQ(files[2].filename, "filename3");
+    EXPECT_EQ(files[2].content_type, "");
+
+    EXPECT_EQ(files[3].name, "name4");
+    EXPECT_EQ(files[3].content, rand2);
+    EXPECT_EQ(files[3].filename, "filename4");
+    EXPECT_EQ(files[3].content_type, "");
+  });
+
+  auto t = std::thread([&]() { svr.listen("localhost", 8080); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  {
+    Client cli("https://localhost:8080");
+    cli.enable_server_certificate_verification(false);
+
+    MultipartFormDataItems items{
+        {"name1", "Testing123", "filename1", "application/octet-stream"},
+        {"name2", "Testing456", "", ""}, // not a file
+    };
+
+    {
+      auto res = cli.Post("/post-none", {}, {}, {});
+      ASSERT_TRUE(res);
+      ASSERT_EQ(200, res->status);
+    }
+
+    MultipartFormDataProviderItems providers;
+
+    {
+      auto res =
+          cli.Post("/post-items", {}, items, providers); // empty providers
+      ASSERT_TRUE(res);
+      ASSERT_EQ(200, res->status);
+    }
+
+    providers.push_back({"name3",
+                         [&](size_t offset, httplib::DataSink &sink) -> bool {
+                           // test the offset is given correctly at each step
+                           if (!offset)
+                             sink.os.write(rand1.data(), 30);
+                           else if (offset == 30)
+                             sink.os.write(rand1.data() + 30, 300);
+                           else if (offset == 330)
+                             sink.os.write(rand1.data() + 330, 670);
+                           else if (offset == rand1.size())
+                             sink.done();
+                           return true;
+                         },
+                         "filename3",
+                         {}});
+
+    providers.push_back({"name4",
+                         [&](size_t offset, httplib::DataSink &sink) -> bool {
+                           // test the offset is given correctly at each step
+                           if (!offset)
+                             sink.os.write(rand2.data(), 2000);
+                           else if (offset == 2000)
+                             sink.os.write(rand2.data() + 2000, 1);
+                           else if (offset == 2001)
+                             sink.os.write(rand2.data() + 2001, 999);
+                           else if (offset == rand2.size())
+                             sink.done();
+                           return true;
+                         },
+                         "filename4",
+                         {}});
+
+    {
+      auto res = cli.Post("/post-providers", {}, {}, providers);
+      ASSERT_TRUE(res);
+      ASSERT_EQ(200, res->status);
+    }
+
+    {
+      auto res = cli.Post("/post-both", {}, items, providers);
+      ASSERT_TRUE(res);
+      ASSERT_EQ(200, res->status);
+    }
+  }
+}
+
+TEST(MultipartFormDataTest, BadHeader) {
+  Server svr;
+  svr.Post("/post", [&](const Request & /*req*/, Response &res) {
+    res.set_content("ok", "text/plain");
+  });
+
+  thread t = thread([&] { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
+
+  const std::string body =
+      "This is the preamble.  It is to be ignored, though it\r\n"
+      "is a handy place for composition agents to include an\r\n"
+      "explanatory note to non-MIME conformant readers.\r\n"
+      "\r\n"
+      "\r\n"
+      "--simple boundary\r\n"
+      "Content-Disposition: form-data; name=\"field1\"\r\n"
+      ": BAD...\r\n"
+      "\r\n"
+      "value1\r\n"
+      "--simple boundary\r\n"
+      "Content-Disposition: form-data; name=\"field2\"; "
+      "filename=\"example.txt\"\r\n"
+      "\r\n"
+      "value2\r\n"
+      "--simple boundary--\r\n"
+      "This is the epilogue.  It is also to be ignored.\r\n";
+
+  std::string content_type =
+      R"(multipart/form-data; boundary="simple boundary")";
+
+  Client cli(HOST, PORT);
+  auto res = cli.Post("/post", body, content_type.c_str());
+
+  ASSERT_TRUE(res);
+  EXPECT_EQ(400, res->status);
 }
 
 TEST(MultipartFormDataTest, WithPreamble) {
@@ -5153,9 +5635,13 @@ TEST(MultipartFormDataTest, WithPreamble) {
   });
 
   thread t = thread([&] { svr.listen(HOST, PORT); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
 
   const std::string body =
       "This is the preamble.  It is to be ignored, though it\r\n"
@@ -5183,9 +5669,6 @@ TEST(MultipartFormDataTest, WithPreamble) {
 
   ASSERT_TRUE(res);
   EXPECT_EQ(200, res->status);
-
-  svr.stop();
-  t.join();
 }
 
 TEST(MultipartFormDataTest, PostCustomBoundary) {
@@ -5224,9 +5707,13 @@ TEST(MultipartFormDataTest, PostCustomBoundary) {
   });
 
   auto t = std::thread([&]() { svr.listen("localhost", 8080); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   {
@@ -5246,9 +5733,6 @@ TEST(MultipartFormDataTest, PostCustomBoundary) {
     ASSERT_TRUE(res);
     ASSERT_EQ(200, res->status);
   }
-
-  svr.stop();
-  t.join();
 }
 
 TEST(MultipartFormDataTest, PostInvalidBoundaryChars) {
@@ -5310,9 +5794,13 @@ TEST(MultipartFormDataTest, PutFormData) {
   });
 
   auto t = std::thread([&]() { svr.listen("localhost", 8080); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   {
@@ -5332,9 +5820,6 @@ TEST(MultipartFormDataTest, PutFormData) {
     ASSERT_TRUE(res);
     ASSERT_EQ(200, res->status);
   }
-
-  svr.stop();
-  t.join();
 }
 
 TEST(MultipartFormDataTest, PutFormDataCustomBoundary) {
@@ -5374,9 +5859,13 @@ TEST(MultipartFormDataTest, PutFormDataCustomBoundary) {
           });
 
   auto t = std::thread([&]() { svr.listen("localhost", 8080); });
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   {
@@ -5396,9 +5885,6 @@ TEST(MultipartFormDataTest, PutFormDataCustomBoundary) {
     ASSERT_TRUE(res);
     ASSERT_EQ(200, res->status);
   }
-
-  svr.stop();
-  t.join();
 }
 
 TEST(MultipartFormDataTest, PutInvalidBoundaryChars) {
@@ -5458,15 +5944,16 @@ TEST_F(UnixSocketTest, pathname) {
   std::thread t{[&] {
     ASSERT_TRUE(svr.set_address_family(AF_UNIX).listen(pathname_, 80));
   }};
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   ASSERT_TRUE(svr.is_running());
 
   client_GET(pathname_);
-
-  svr.stop();
-  t.join();
 }
 
 #if defined(__linux__) ||                                                      \
@@ -5482,16 +5969,17 @@ TEST_F(UnixSocketTest, PeerPid) {
   std::thread t{[&] {
     ASSERT_TRUE(svr.set_address_family(AF_UNIX).listen(pathname_, 80));
   }};
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   ASSERT_TRUE(svr.is_running());
 
   client_GET(pathname_);
   EXPECT_EQ(std::to_string(getpid()), remote_port_val);
-
-  svr.stop();
-  t.join();
 }
 #endif
 
@@ -5508,15 +5996,16 @@ TEST_F(UnixSocketTest, abstract) {
   std::thread t{[&] {
     ASSERT_TRUE(svr.set_address_family(AF_UNIX).listen(abstract_addr, 80));
   }};
-  while (!svr.is_running()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  svr.wait_until_ready();
   ASSERT_TRUE(svr.is_running());
 
   client_GET(abstract_addr);
-
-  svr.stop();
-  t.join();
 }
 #endif
 
@@ -5596,4 +6085,81 @@ TEST(TaskQueueTest, IncreaseAtomicInteger) {
 
   EXPECT_NO_THROW(task_queue->shutdown());
   EXPECT_EQ(number_of_task, count.load());
+}
+
+TEST(RedirectTest, RedirectToUrlWithQueryParameters) {
+  Server svr;
+
+  svr.Get("/", [](const Request & /*req*/, Response &res) {
+    res.set_redirect(R"(/hello?key=val%26key2%3Dval2)");
+  });
+
+  svr.Get("/hello", [](const Request &req, Response &res) {
+    res.set_content(req.get_param_value("key"), "text/plain");
+  });
+
+  auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  {
+    Client cli(HOST, PORT);
+    cli.set_follow_location(true);
+
+    auto res = cli.Get("/");
+    ASSERT_TRUE(res);
+    EXPECT_EQ(200, res->status);
+    EXPECT_EQ("val&key2=val2", res->body);
+  }
+}
+
+TEST(VulnerabilityTest, CRLFInjection) {
+  Server svr;
+
+  svr.Post("/test1", [](const Request &/*req*/, Response &res) {
+    res.set_content("Hello 1", "text/plain");
+  });
+
+  svr.Delete("/test2", [](const Request &/*req*/, Response &res) {
+    res.set_content("Hello 2", "text/plain");
+  });
+
+  svr.Put("/test3", [](const Request &/*req*/, Response &res) {
+    res.set_content("Hello 3", "text/plain");
+  });
+
+  svr.Patch("/test4", [](const Request &/*req*/, Response &res) {
+    res.set_content("Hello 4", "text/plain");
+  });
+
+  svr.set_logger([](const Request &req, const Response & /*res*/) {
+    for (const auto &x : req.headers) {
+      auto key = x.first;
+      EXPECT_STRNE("evil", key.c_str());
+    }
+  });
+
+  auto thread = std::thread([&]() { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    thread.join();
+    ASSERT_FALSE(svr.is_running());
+  });
+
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  {
+    Client cli(HOST, PORT);
+
+    cli.Post("/test1", "A=B",
+             "application/x-www-form-urlencoded\r\nevil: hello1");
+    cli.Delete("/test2", "A=B", "text/plain\r\nevil: hello2");
+    cli.Put("/test3", "text", "text/plain\r\nevil: hello3");
+    cli.Patch("/test4", "content", "text/plain\r\nevil: hello4");
+  }
 }
