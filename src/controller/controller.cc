@@ -52,6 +52,23 @@ std::string getFileContent(std::string file_path){
 }
 
 
+std::string buildRetJSON(int iter, std::vector<std::string> keys,DB_Result values){
+
+    std::string ret_string = "";
+
+
+
+    for(int i=0;i<iter;i++){
+
+        ret_string += "{\"" + keys[0] + "\":\"" + values.Result[i].first + "\", {\""+keys[1]+"\":\"" + values.Result[i].second + "\",{\"" +values.Result[i].third + "\"} ";
+
+    }
+
+
+    return ret_string;
+
+}
+
 
 
 class Controller {
@@ -85,12 +102,15 @@ public:
 
         std::string val = body_json["CMD"];
 
+
         
         DB_Result record_data = mdl.GetRecordByCmd();
 
         std::string ret_data = "";
 
         if (record_data.Status != 0){
+
+            ret_data += "[]";
 
             res.set_content(ret_data,"text/plain");
             logCurrentTime("[ /get-records ]");
@@ -99,12 +119,17 @@ public:
         }
 
         int result_c = record_data.RecordCount;
+
+        std::vector<std::string> keys;
+
+        keys.push_back("first");
+        keys.push_back("second");
+        keys.push_back("third");
+
+        ret_data = buildRetJSON(result_c, keys, record_data);
         
-        for(int i=0;i<result_c;i++){
 
-            ret_data += "| " + record_data.Result[i].first + " | " + record_data.Result[i].second + " | " +record_data.Result[i].third + " |\n";
-
-        }
+        ret_data = "[" + ret_data + "]";
         
         res.set_content(ret_data,"text/plain");
 

@@ -68,7 +68,7 @@ create_ap () {
 }
 
 
-if ! command -v hostapd &> /dev/null
+if ! command -v hostapd || ! command -v dnsmasq &> /dev/null
 then
     echo "Access Point Mode has not been enabled."
     echo "System will be rebooted after the procedure succeeds."

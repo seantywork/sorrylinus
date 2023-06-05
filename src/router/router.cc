@@ -5,6 +5,12 @@
 
 using namespace httplib;
 
+
+std::ifstream rt_f("./config.json");
+json rt_config_data = json::parse(rt_f);
+
+std::string PUBLIC_ROOT = rt_config_data["PUBLIC_ROOT"];
+
 /*
 using json = nlohmann::json;
 
@@ -32,6 +38,8 @@ public:
     void Init(){
 
         srv->Get("/", ctrl.GetIndex);
+
+        srv->set_mount_point("/public",PUBLIC_ROOT);
 
         srv->Post("/get-records", ctrl.GetRecords);
 
