@@ -1,5 +1,8 @@
-#include "../../lib/httplib/httplib.h"
-#include "../../lib/nlohmann/json.hpp"
+#ifndef SERVER_PREPROCESSOR_HEADER 
+#define SERVER_PREPROCESSOR_HEADER y
+#include "../lib/httplib/httplib.h"
+#include "../lib/nlohmann/json.hpp"
+#endif
 
 #include "../controller/controller.cc"
 

@@ -9,109 +9,111 @@ PP=""
 
 create_ap () {
 
-    sudo apt-get update 
-    
-    sudo apt-get -y install hostapd=2:2.9-1ubuntu4.3 dnsmasq=2.80-1.1ubuntu1.7
+	sudo apt-get update 
+	
+	sudo apt-get -y install hostapd=2:2.9-1ubuntu4.3 dnsmasq=2.80-1.1ubuntu1.7
 
-    sed -i "0,/?/s//$SSID/" ./tools/hostapd.conf
+	sed -i "0,/?/s//$SSID/" ./bin/hostapd.conf
 
-    sed -i "0,/?/s//$PP/" ./tools/hostapd.conf
-    
-    sudo /bin/cp -rf ./tools/hostapd.conf /etc/hostapd/hostapd.conf
+	sed -i "0,/?/s//$PP/" ./bin/hostapd.conf
+	
+	sudo /bin/cp -rf ./bin/hostapd.conf /etc/hostapd/hostapd.conf
 
-    sudo chmod 644 /etc/hostapd/hostapd.conf
+	sudo chmod 644 /etc/hostapd/hostapd.conf
 
-    sudo chown root:root /etc/hostapd/hostapd.conf
+	sudo chown root:root /etc/hostapd/hostapd.conf
 
-    sudo /bin/cp -rf ./tools/hostapd /etc/default/hostapd
+	sudo /bin/cp -rf ./bin/hostapd /etc/default/hostapd
 
-    sudo chmod 644 /etc/default/hostapd
+	sudo chmod 644 /etc/default/hostapd
 
-    sudo chown root:root /etc/default/hostapd
+	sudo chown root:root /etc/default/hostapd
 
-    sudo systemctl unmask hostapd
+	sudo systemctl unmask hostapd
 
-    sudo systemctl enable hostapd
-    
-    sudo systemctl start hostapd
+	sudo systemctl enable hostapd
+	
+	sudo systemctl start hostapd
 
-    sudo /bin/cp -rf /etc/dnsmasq.conf /etc/dnsmasq.conf.org
+	sudo /bin/cp -rf /etc/dnsmasq.conf /etc/dnsmasq.conf.org
 
-    sudo /bin/cp -rf ./tools/dnsmasq.conf /etc/dnsmasq.conf
+	sudo /bin/cp -rf ./bin/dnsmasq.conf /etc/dnsmasq.conf
 
-    sudo chmod 644 /etc/dnsmasq.conf
+	sudo chmod 644 /etc/dnsmasq.conf
 
-    sudo chown root:root /etc/dnsmasq.conf
+	sudo chown root:root /etc/dnsmasq.conf
 
-    sudo /bin/cp -rf ./tools/dnsmasq.service /lib/systemd/system/dnsmasq.service
+	sudo /bin/cp -rf ./bin/dnsmasq.service /lib/systemd/system/dnsmasq.service
 
-    sudo chmod 644 /lib/systemd/system/dnsmasq.service
+	sudo chmod 644 /lib/systemd/system/dnsmasq.service
 
-    sudo chown root:root /lib/systemd/system/dnsmasq.service
+	sudo chown root:root /lib/systemd/system/dnsmasq.service
 
-    sudo systemctl enable hostapd
-    
-    sudo systemctl start hostapd
-    
-    sudo systemctl start dnsmasq
+	sudo systemctl enable hostapd
+	
+	sudo systemctl start hostapd
+	
+	sudo systemctl start dnsmasq
 
-    sudo systemctl reload dnsmasq
+	sudo systemctl reload dnsmasq
 
-    sudo /bin/cp -rf ./tools/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml
+	sudo /bin/cp -rf ./bin/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml
 
-    sudo chmod 644 /etc/netplan/50-cloud-init.yaml
+	sudo chmod 644 /etc/netplan/50-cloud-init.yaml
 
-    sudo chown root:root /etc/netplan/50-cloud-init.yaml
+	sudo chown root:root /etc/netplan/50-cloud-init.yaml
 
-    sudo reboot
+	sudo reboot
 
 }
 
 
 if ! command -v hostapd || ! command -v dnsmasq &> /dev/null
 then
-    echo "Access Point Mode has not been enabled."
-    echo "System will be rebooted after the procedure succeeds."
-    echo "Proceed? [Yn] :"
-    read YN
+	echo "Access Point Mode has not been enabled."
+	echo "System will be rebooted after the procedure succeeds."
+	echo "Proceed? [Yn] :"
+	read YN
 
-    if [ $YN != "Y" ]
-    then
-        echo "aborted."
-        exit 0
-    fi
+	if [ $YN != "Y" ]
+	then
+		echo "aborted."
+		exit 0
+	fi
 
-    echo "SSID :"
-    read SSID
-    echo "SSID confirm :"
-    read SSID_tmp
+	echo "SSID :"
+	read SSID
+	echo "SSID confirm :"
+	read SSID_tmp
 
-    if [ "$SSID" != "$SSID_tmp" ]
-    then
-        echo "SSID not matched"
-        echo "aborted."
-        exit 0
-    fi
+	if [ "$SSID" != "$SSID_tmp" ]
+	then
+		echo "SSID not matched"
+		echo "aborted."
+		exit 0
+	fi
 
-    echo "PASSPHRASE :"
-    read PP
-    echo "PASSPHRASE confirm :"
-    read PP_tmp
+	echo "PASSPHRASE :"
+	read PP
+	echo "PASSPHRASE confirm :"
+	read PP_tmp
 
-    if [ "$PP" != "$PP_tmp" ]
-    then
-        echo "PASSPHRASE not matched"
-        echo "aborted."
-        exit 0
-    fi
+	if [ "$PP" != "$PP_tmp" ]
+	then
+		echo "PASSPHRASE not matched"
+		echo "aborted."
+		exit 0
+	fi
 
-    create_ap
+	create_ap
 fi
+
 
 echo "=====> Access Mode enabled"
 
 if ! command -v g++ &> /dev/null
 then
+    echo "Installing missing build tools"
     sudo apt-get update 
     sudo apt-get -y install build-essential=12.8ubuntu1.1
 fi
@@ -119,6 +121,7 @@ fi
 
 if ! command -v sqlite3 &> /dev/null
 then
+    echo "Installing sqlite3 dependency"
     sudo apt-get update 
     sudo apt-get -y install sqlite3=3.31.1-4ubuntu0.5 libsqlite3-dev=3.31.1-4ubuntu0.5
 fi
@@ -131,6 +134,7 @@ then
     echo "creating..."
     g++ -v -pthread -o ./src/app ./src/app.cc -l sqlite3
 fi
+
 
 cd ./src && ./app
 

@@ -53,3 +53,19 @@ mmcblk0     179:0    0 14.9G  0 disk
 ├─mmcblk0p1 179:1    0  256M  0 part /boot/firmware
 └─mmcblk0p2 179:2    0 14.6G  0 part /
 ```
+
+- source tree include structure has been improved
+
+c/c++ include structure is a terrible hot mess...until you give it a proper care!
+
+along with a string of the #ifndef...#endif attached to each of the files within /src directory,
+
+I've also moved files used during the Access Mode installation into /bin folder.
+
+I'm also working on refactoring and a better, clearer isolation of each component 
+
+- front-end API handle has been added
+
+Yep, it's Javascript. I briefly thought about making a whole new Android app for this,
+
+however, it seems like a tremendous overkill at this point.

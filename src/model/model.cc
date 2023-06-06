@@ -1,63 +1,26 @@
-#include "../../lib/httplib/httplib.h"
+#ifndef SERVER_PREPROCESSOR_HEADER 
+#define SERVER_PREPROCESSOR_HEADER y
+#include "../lib/httplib/httplib.h"
+#include "../lib/nlohmann/json.hpp"
+#endif
+
+
 #include <sqlite3.h> 
 
 using namespace httplib;
 
 
-
-
-
-struct RecordText {
-
-    std::string first, second, third;
-
-};
+std::map<std::string,std::string> RecordText;
 
 struct DB_Result {
 
     int Status;
     int RecordCount = 0;
-    std::vector<RecordText> Result; 
+    std::vector<std::map<std::string,std::string>> Result; 
 
 };
 
-static int GetRecordByCmd_callback(void* data, int argc, char** argv, char** azColName)
-{
-    int i; 
-
-    DB_Result* data_callback;
-
-    data_callback = (DB_Result*)data;
-
-    RecordText row;
-
-    for (i =0;i<argc;i++){
-
-
-        if ((std::string)azColName[i] == "first"){
-
-            row.first = argv[i]? argv[i]:"NULL";
-
-        } else if ((std::string)azColName[i] == "second"){
-
-            row.second = argv[i]? argv[i]:"NULL";
-            
-        } else if ((std::string)azColName[i] == "third"){
-
-            row.third = argv[i]? argv[i]:"NULL";
-
-        }
-
-    }
-
-    data_callback->RecordCount += 1;
-    data_callback->Result.push_back(row);
-    
-    
-    return 0;
-}
-
-
+#include "./callback.cc"
 
 class Model {
 

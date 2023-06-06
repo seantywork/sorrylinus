@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <sqlite3.h>
+#include "../lib/nlohmann/json.hpp"
   
 using namespace std;
 
@@ -29,8 +30,22 @@ static int callback(void* data, int argc, char** argv, char** azColName)
     return 0;
 }
   
+void json_parse(){
+
+
+    using json = nlohmann::json;
+
+    std::string test_json_string = "[{\"test_key\" : \"test_value\"]";
+
+    json ctrl_config_data = json::parse(test_json_string);
+
+    std::cout << ctrl_config_data[0]["test_key"] << std::endl;
+
+}
+
 int main(int argc, char** argv)
 {
+    /*
     sqlite3* DB;
     int exit = 0;
     exit = sqlite3_open("rec.db", &DB);
@@ -57,4 +72,17 @@ int main(int argc, char** argv)
   
     sqlite3_close(DB);
     return (0);
+    */
+
+    try{
+        json_parse();
+
+    }catch(...){
+        std::cout << "Error" << std::endl;
+        return 1;
+    }
+
+
+    return 0;
+
 }
