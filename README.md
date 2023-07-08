@@ -5,7 +5,7 @@
 **Disclaimer : I am not liable for any misuse of this code**
 **Only use it on machines and in environments that you have explicit permissions and authrizations to do so**
 
-this server handles sorrylinus-cpp-client query to interact with sorrylinus-api, sercurely
+handling sorrylinus query to interact with sorrylinus-api, sercurely
 
 ## How to use it
 
