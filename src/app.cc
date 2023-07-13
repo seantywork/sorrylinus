@@ -5,6 +5,7 @@
 #endif
 
 #include "./router/router.cc"
+#include <sorrylinus/test/soliapi_test.h>
 
 using namespace httplib;
 

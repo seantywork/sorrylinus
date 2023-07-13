@@ -128,14 +128,6 @@ fi
 
 echo "=====> Runtime Environment prepared."
 
-if [ ! -f ./src/app ] 
-then
-    echo "executable does not exist. "
-    echo "creating..."
-    g++ -v -pthread -o ./src/app ./src/app.cc -l sqlite3
-fi
 
-
-cd ./src && ./app
-
+cd ./src && ./soliapp
 
