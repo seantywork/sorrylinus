@@ -1,11 +1,15 @@
-# sorrylinus-server
+# sorrylinus
 
 ===========
+
+
+I'm sorry Linus, for building the most useless software on earth to handle remotely
+
+the most useful software on earth
 
 **Disclaimer : I am not liable for any misuse of this code**
 **Only use it on machines and in environments that you have explicit permissions and authrizations to do so**
 
-handling sorrylinus query to interact with sorrylinus-api, sercurely
 
 ## How to use it
 
