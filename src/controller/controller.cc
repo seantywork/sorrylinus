@@ -1,7 +1,7 @@
-#ifndef SERVER_PREPROCESSOR_HEADER 
-#define SERVER_PREPROCESSOR_HEADER y
-#include "../lib/httplib/httplib.h"
-#include "../lib/nlohmann/json.hpp"
+#ifndef PREPROCESSOR_HEADER 
+#define PREPROCESSOR_HEADER 
+#include "../../include/httplib/httplib.h"
+#include "../../include/nlohmann/json.hpp"
 #endif
 
 

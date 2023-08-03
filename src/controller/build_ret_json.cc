@@ -1,5 +1,5 @@
-#ifndef SERVER_PREPROCESSOR_HEADER 
-#define SERVER_PREPROCESSOR_HEADER y
+#ifndef PREPROCESSOR_HEADER 
+#define PREPROCESSOR_HEADER 
 #include <bits/stdc++.h>
 #include "../model/model.cc"
 #endif

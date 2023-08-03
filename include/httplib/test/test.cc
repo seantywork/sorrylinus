@@ -526,7 +526,13 @@ TEST(ChunkedEncodingTest, WithResponseHandlerAndContentReceiver_Online) {
 }
 
 TEST(RangeTest, FromHTTPBin_Online) {
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
   auto host = "httpbin.org";
+  auto path = std::string{"/range/32"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/range/32"};
+#endif
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
   auto port = 443;
@@ -538,7 +544,7 @@ TEST(RangeTest, FromHTTPBin_Online) {
   cli.set_connection_timeout(5);
 
   {
-    auto res = cli.Get("/range/32");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ("abcdefghijklmnopqrstuvwxyzabcdef", res->body);
     EXPECT_EQ(200, res->status);
@@ -546,7 +552,7 @@ TEST(RangeTest, FromHTTPBin_Online) {
 
   {
     Headers headers = {make_range_header({{1, -1}})};
-    auto res = cli.Get("/range/32", headers);
+    auto res = cli.Get(path, headers);
     ASSERT_TRUE(res);
     EXPECT_EQ("bcdefghijklmnopqrstuvwxyzabcdef", res->body);
     EXPECT_EQ(206, res->status);
@@ -554,7 +560,7 @@ TEST(RangeTest, FromHTTPBin_Online) {
 
   {
     Headers headers = {make_range_header({{1, 10}})};
-    auto res = cli.Get("/range/32", headers);
+    auto res = cli.Get(path, headers);
     ASSERT_TRUE(res);
     EXPECT_EQ("bcdefghijk", res->body);
     EXPECT_EQ(206, res->status);
@@ -562,7 +568,7 @@ TEST(RangeTest, FromHTTPBin_Online) {
 
   {
     Headers headers = {make_range_header({{0, 31}})};
-    auto res = cli.Get("/range/32", headers);
+    auto res = cli.Get(path, headers);
     ASSERT_TRUE(res);
     EXPECT_EQ("abcdefghijklmnopqrstuvwxyzabcdef", res->body);
     EXPECT_EQ(200, res->status);
@@ -570,7 +576,7 @@ TEST(RangeTest, FromHTTPBin_Online) {
 
   {
     Headers headers = {make_range_header({{0, -1}})};
-    auto res = cli.Get("/range/32", headers);
+    auto res = cli.Get(path, headers);
     ASSERT_TRUE(res);
     EXPECT_EQ("abcdefghijklmnopqrstuvwxyzabcdef", res->body);
     EXPECT_EQ(200, res->status);
@@ -578,7 +584,7 @@ TEST(RangeTest, FromHTTPBin_Online) {
 
   {
     Headers headers = {make_range_header({{0, 32}})};
-    auto res = cli.Get("/range/32", headers);
+    auto res = cli.Get(path, headers);
     ASSERT_TRUE(res);
     EXPECT_EQ(416, res->status);
   }
@@ -673,7 +679,13 @@ TEST(ConnectionErrorTest, Timeout_Online) {
 }
 
 TEST(CancelTest, NoCancel_Online) {
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
   auto host = "httpbin.org";
+  auto path = std::string{"/range/32"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/range/32"};
+#endif
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
   auto port = 443;
@@ -684,14 +696,20 @@ TEST(CancelTest, NoCancel_Online) {
 #endif
   cli.set_connection_timeout(std::chrono::seconds(5));
 
-  auto res = cli.Get("/range/32", [](uint64_t, uint64_t) { return true; });
+  auto res = cli.Get(path, [](uint64_t, uint64_t) { return true; });
   ASSERT_TRUE(res);
   EXPECT_EQ("abcdefghijklmnopqrstuvwxyzabcdef", res->body);
   EXPECT_EQ(200, res->status);
 }
 
 TEST(CancelTest, WithCancelSmallPayload_Online) {
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
   auto host = "httpbin.org";
+  auto path = std::string{"/range/32"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/range/32"};
+#endif
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
   auto port = 443;
@@ -701,14 +719,20 @@ TEST(CancelTest, WithCancelSmallPayload_Online) {
   Client cli(host, port);
 #endif
 
-  auto res = cli.Get("/range/32", [](uint64_t, uint64_t) { return false; });
+  auto res = cli.Get(path, [](uint64_t, uint64_t) { return false; });
   cli.set_connection_timeout(std::chrono::seconds(5));
   ASSERT_TRUE(!res);
   EXPECT_EQ(Error::Canceled, res.error());
 }
 
 TEST(CancelTest, WithCancelLargePayload_Online) {
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
   auto host = "httpbin.org";
+  auto path = std::string{"/range/65536"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/range/65536"};
+#endif
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
   auto port = 443;
@@ -720,14 +744,20 @@ TEST(CancelTest, WithCancelLargePayload_Online) {
   cli.set_connection_timeout(std::chrono::seconds(5));
 
   uint32_t count = 0;
-  auto res = cli.Get("/range/65536",
-                     [&count](uint64_t, uint64_t) { return (count++ == 0); });
+  auto res =
+      cli.Get(path, [&count](uint64_t, uint64_t) { return (count++ == 0); });
   ASSERT_TRUE(!res);
   EXPECT_EQ(Error::Canceled, res.error());
 }
 
 TEST(BaseAuthTest, FromHTTPWatch_Online) {
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
   auto host = "httpbin.org";
+  auto path = std::string{"/basic-auth/hello/world"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/basic-auth/hello/world"};
+#endif
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
   auto port = 443;
@@ -738,14 +768,14 @@ TEST(BaseAuthTest, FromHTTPWatch_Online) {
 #endif
 
   {
-    auto res = cli.Get("/basic-auth/hello/world");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ(401, res->status);
   }
 
   {
-    auto res = cli.Get("/basic-auth/hello/world",
-                       {make_basic_authentication_header("hello", "world")});
+    auto res =
+        cli.Get(path, {make_basic_authentication_header("hello", "world")});
     ASSERT_TRUE(res);
     EXPECT_EQ("{\n  \"authenticated\": true, \n  \"user\": \"hello\"\n}\n",
               res->body);
@@ -754,7 +784,7 @@ TEST(BaseAuthTest, FromHTTPWatch_Online) {
 
   {
     cli.set_basic_auth("hello", "world");
-    auto res = cli.Get("/basic-auth/hello/world");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ("{\n  \"authenticated\": true, \n  \"user\": \"hello\"\n}\n",
               res->body);
@@ -763,14 +793,14 @@ TEST(BaseAuthTest, FromHTTPWatch_Online) {
 
   {
     cli.set_basic_auth("hello", "bad");
-    auto res = cli.Get("/basic-auth/hello/world");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ(401, res->status);
   }
 
   {
     cli.set_basic_auth("bad", "world");
-    auto res = cli.Get("/basic-auth/hello/world");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ(401, res->status);
   }
@@ -778,26 +808,39 @@ TEST(BaseAuthTest, FromHTTPWatch_Online) {
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 TEST(DigestAuthTest, FromHTTPWatch_Online) {
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
   auto host = "httpbin.org";
+  auto unauth_path = std::string{"/digest-auth/auth/hello/world"};
+  auto paths = std::vector<std::string>{
+      "/digest-auth/auth/hello/world/MD5",
+      "/digest-auth/auth/hello/world/SHA-256",
+      "/digest-auth/auth/hello/world/SHA-512",
+      "/digest-auth/auth-int/hello/world/MD5",
+  };
+#else
+  auto host = "nghttp2.org";
+  auto unauth_path = std::string{"/httpbin/digest-auth/auth/hello/world"};
+  auto paths = std::vector<std::string>{
+      "/httpbin/digest-auth/auth/hello/world/MD5",
+      "/httpbin/digest-auth/auth/hello/world/SHA-256",
+      "/httpbin/digest-auth/auth/hello/world/SHA-512",
+      "/httpbin/digest-auth/auth-int/hello/world/MD5",
+  };
+#endif
+
   auto port = 443;
   SSLClient cli(host, port);
 
   {
-    auto res = cli.Get("/digest-auth/auth/hello/world");
+    auto res = cli.Get(unauth_path);
     ASSERT_TRUE(res);
     EXPECT_EQ(401, res->status);
   }
 
   {
-    std::vector<std::string> paths = {
-        "/digest-auth/auth/hello/world/MD5",
-        "/digest-auth/auth/hello/world/SHA-256",
-        "/digest-auth/auth/hello/world/SHA-512",
-        "/digest-auth/auth-int/hello/world/MD5",
-    };
 
     cli.set_digest_auth("hello", "world");
-    for (auto path : paths) {
+    for (const auto &path : paths) {
       auto res = cli.Get(path.c_str());
       ASSERT_TRUE(res);
       EXPECT_EQ("{\n  \"authenticated\": true, \n  \"user\": \"hello\"\n}\n",
@@ -806,7 +849,7 @@ TEST(DigestAuthTest, FromHTTPWatch_Online) {
     }
 
     cli.set_digest_auth("hello", "bad");
-    for (auto path : paths) {
+    for (const auto &path : paths) {
       auto res = cli.Get(path.c_str());
       ASSERT_TRUE(res);
       EXPECT_EQ(401, res->status);
@@ -815,7 +858,7 @@ TEST(DigestAuthTest, FromHTTPWatch_Online) {
     // NOTE: Until httpbin.org fixes issue #46, the following test is commented
     // out. Please see https://httpbin.org/digest-auth/auth/hello/world
     // cli.set_digest_auth("bad", "world");
-    // for (auto path : paths) {
+    // for (const auto& path : paths) {
     //   auto res = cli.Get(path.c_str());
     //   ASSERT_TRUE(res);
     //   EXPECT_EQ(400, res->status);
@@ -929,7 +972,7 @@ TEST(YahooRedirectTest, Redirect_Online) {
   res = cli.Get("/");
   ASSERT_TRUE(res);
   EXPECT_EQ(200, res->status);
-  EXPECT_EQ("https://yahoo.com/", res->location);
+  EXPECT_EQ("https://www.yahoo.com/", res->location);
 }
 
 TEST(HttpsToHttpRedirectTest, Redirect_Online) {
@@ -2458,6 +2501,55 @@ TEST_F(ServerTest, StaticFileRange) {
   EXPECT_EQ(std::string("cd"), res->body);
 }
 
+TEST_F(ServerTest, StaticFileRanges) {
+  auto res =
+      cli_.Get("/dir/test.abcde", {{make_range_header({{1, 2}, {4, -1}})}});
+  ASSERT_TRUE(res);
+  EXPECT_EQ(206, res->status);
+  EXPECT_TRUE(
+      res->get_header_value("Content-Type")
+          .find(
+              "multipart/byteranges; boundary=--cpp-httplib-multipart-data-") ==
+      0);
+  EXPECT_EQ("265", res->get_header_value("Content-Length"));
+}
+
+TEST_F(ServerTest, StaticFileRangeHead) {
+  auto res = cli_.Head("/dir/test.abcde", {{make_range_header({{2, 3}})}});
+  ASSERT_TRUE(res);
+  EXPECT_EQ(206, res->status);
+  EXPECT_EQ("text/abcde", res->get_header_value("Content-Type"));
+  EXPECT_EQ("2", res->get_header_value("Content-Length"));
+  EXPECT_EQ(true, res->has_header("Content-Range"));
+}
+
+TEST_F(ServerTest, StaticFileRangeBigFile) {
+  auto res = cli_.Get("/dir/1MB.txt", {{make_range_header({{-1, 5}})}});
+  ASSERT_TRUE(res);
+  EXPECT_EQ(206, res->status);
+  EXPECT_EQ("text/plain", res->get_header_value("Content-Type"));
+  EXPECT_EQ("5", res->get_header_value("Content-Length"));
+  EXPECT_EQ(true, res->has_header("Content-Range"));
+  EXPECT_EQ("LAST\n", res->body);
+}
+
+TEST_F(ServerTest, StaticFileRangeBigFile2) {
+  auto res = cli_.Get("/dir/1MB.txt", {{make_range_header({{1, 4097}})}});
+  ASSERT_TRUE(res);
+  EXPECT_EQ(206, res->status);
+  EXPECT_EQ("text/plain", res->get_header_value("Content-Type"));
+  EXPECT_EQ("4097", res->get_header_value("Content-Length"));
+  EXPECT_EQ(true, res->has_header("Content-Range"));
+}
+
+TEST_F(ServerTest, StaticFileBigFile) {
+  auto res = cli_.Get("/dir/1MB.txt");
+  ASSERT_TRUE(res);
+  EXPECT_EQ(200, res->status);
+  EXPECT_EQ("text/plain", res->get_header_value("Content-Type"));
+  EXPECT_EQ("1048576", res->get_header_value("Content-Length"));
+}
+
 TEST_F(ServerTest, InvalidBaseDirMount) {
   EXPECT_EQ(false, svr_.set_mount_point("invalid_mount_point", "./www3"));
 }
@@ -2843,9 +2935,9 @@ TEST_F(ServerTest, GetStreamedWithRangeMultipart) {
       cli_.Get("/streamed-with-range", {{make_range_header({{1, 2}, {4, 5}})}});
   ASSERT_TRUE(res);
   EXPECT_EQ(206, res->status);
-  EXPECT_EQ("269", res->get_header_value("Content-Length"));
+  EXPECT_EQ("267", res->get_header_value("Content-Length"));
   EXPECT_EQ(false, res->has_header("Content-Range"));
-  EXPECT_EQ(269U, res->body.size());
+  EXPECT_EQ(267U, res->body.size());
 }
 
 TEST_F(ServerTest, GetStreamedEndless) {
@@ -2935,9 +3027,9 @@ TEST_F(ServerTest, GetWithRangeMultipart) {
   auto res = cli_.Get("/with-range", {{make_range_header({{1, 2}, {4, 5}})}});
   ASSERT_TRUE(res);
   EXPECT_EQ(206, res->status);
-  EXPECT_EQ("269", res->get_header_value("Content-Length"));
+  EXPECT_EQ("267", res->get_header_value("Content-Length"));
   EXPECT_EQ(false, res->has_header("Content-Range"));
-  EXPECT_EQ(269U, res->body.size());
+  EXPECT_EQ(267U, res->body.size());
 }
 
 TEST_F(ServerTest, GetWithRangeMultipartOffsetGreaterThanContent) {
@@ -3285,6 +3377,59 @@ TEST(GzipDecompressor, ChunkedDecompression) {
     }
   }
   ASSERT_EQ(data, decompressed_data);
+}
+
+TEST(GzipDecompressor, DeflateDecompression) {
+  std::string original_text = "Raw deflate without gzip";
+  unsigned char data[32] = {0x78, 0x9C, 0x0B, 0x4A, 0x2C, 0x57, 0x48, 0x49,
+                            0x4D, 0xCB, 0x49, 0x2C, 0x49, 0x55, 0x28, 0xCF,
+                            0x2C, 0xC9, 0xC8, 0x2F, 0x2D, 0x51, 0x48, 0xAF,
+                            0xCA, 0x2C, 0x00, 0x00, 0x6F, 0x98, 0x09, 0x2E};
+  std::string compressed_data(data, data + sizeof(data) / sizeof(data[0]));
+
+  std::string decompressed_data;
+  {
+    httplib::detail::gzip_decompressor decompressor;
+
+    bool result = decompressor.decompress(
+        compressed_data.data(), compressed_data.size(),
+        [&](const char *decompressed_data_chunk,
+            size_t decompressed_data_chunk_size) {
+          decompressed_data.insert(decompressed_data.size(),
+                                   decompressed_data_chunk,
+                                   decompressed_data_chunk_size);
+          return true;
+        });
+    ASSERT_TRUE(result);
+  }
+  ASSERT_EQ(original_text, decompressed_data);
+}
+
+TEST(GzipDecompressor, DeflateDecompressionTrailingBytes) {
+  std::string original_text = "Raw deflate without gzip";
+  unsigned char data[40] = {0x78, 0x9C, 0x0B, 0x4A, 0x2C, 0x57, 0x48, 0x49,
+                            0x4D, 0xCB, 0x49, 0x2C, 0x49, 0x55, 0x28, 0xCF,
+                            0x2C, 0xC9, 0xC8, 0x2F, 0x2D, 0x51, 0x48, 0xAF,
+                            0xCA, 0x2C, 0x00, 0x00, 0x6F, 0x98, 0x09, 0x2E,
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  std::string compressed_data(data, data + sizeof(data) / sizeof(data[0]));
+
+  std::string decompressed_data;
+  {
+    httplib::detail::gzip_decompressor decompressor;
+
+    bool result = decompressor.decompress(
+        compressed_data.data(), compressed_data.size(),
+        [&](const char *decompressed_data_chunk,
+            size_t decompressed_data_chunk_size) {
+          decompressed_data.insert(decompressed_data.size(),
+                                   decompressed_data_chunk,
+                                   decompressed_data_chunk_size);
+          return true;
+        });
+    ASSERT_TRUE(result);
+  }
+  ASSERT_EQ(original_text, decompressed_data);
 }
 
 #ifdef _WIN32
@@ -3919,16 +4064,16 @@ TEST(ServerStopTest, StopServerWithChunkedTransmission) {
 
   svr.Get("/events", [](const Request & /*req*/, Response &res) {
     res.set_header("Cache-Control", "no-cache");
-    res.set_chunked_content_provider("text/event-stream", [](size_t offset,
-                                                             DataSink &sink) {
-      std::string s = "data:";
-      s += std::to_string(offset);
-      s += "\n\n";
-      auto ret = sink.write(s.data(), s.size());
-      EXPECT_TRUE(ret);
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-      return true;
-    });
+    res.set_chunked_content_provider(
+        "text/event-stream", [](size_t offset, DataSink &sink) {
+          std::string s = "data:";
+          s += std::to_string(offset);
+          s += "\n\n";
+          auto ret = sink.write(s.data(), s.size());
+          EXPECT_TRUE(ret);
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+          return true;
+        });
   });
 
   auto listen_thread = std::thread([&svr]() { svr.listen("localhost", PORT); });
@@ -4336,6 +4481,12 @@ TEST(GetWithParametersTest, GetWithParameters) {
     EXPECT_EQ("bar", req.get_param_value("param2"));
   });
 
+  svr.Get("/users/:id", [&](const Request &req, Response &) {
+    EXPECT_EQ("user-id", req.path_params.at("id"));
+    EXPECT_EQ("foo", req.get_param_value("param1"));
+    EXPECT_EQ("bar", req.get_param_value("param2"));
+  });
+
   auto listen_thread = std::thread([&svr]() { svr.listen(HOST, PORT); });
   auto se = detail::scope_exit([&] {
     svr.stop();
@@ -4372,6 +4523,15 @@ TEST(GetWithParametersTest, GetWithParameters) {
     Client cli(HOST, PORT);
 
     auto res = cli.Get("/resources/resource-id?param1=foo&param2=bar");
+
+    ASSERT_TRUE(res);
+    EXPECT_EQ(200, res->status);
+  }
+
+  {
+    Client cli(HOST, PORT);
+
+    auto res = cli.Get("/users/user-id?param1=foo&param2=bar");
 
     ASSERT_TRUE(res);
     EXPECT_EQ(200, res->status);
@@ -4414,19 +4574,32 @@ TEST(GetWithParametersTest, GetWithParameters2) {
 }
 
 TEST(ClientDefaultHeadersTest, DefaultHeaders_Online) {
-  Client cli("httpbin.org");
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
+  auto host = "httpbin.org";
+  auto path = std::string{"/range/32"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/range/32"};
+#endif
+
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  SSLClient cli(host);
+#else
+  Client cli(host);
+#endif
+
   cli.set_default_headers({make_range_header({{1, 10}})});
   cli.set_connection_timeout(5);
 
   {
-    auto res = cli.Get("/range/32");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ("bcdefghijk", res->body);
     EXPECT_EQ(206, res->status);
   }
 
   {
-    auto res = cli.Get("/range/32");
+    auto res = cli.Get(path);
     ASSERT_TRUE(res);
     EXPECT_EQ("bcdefghijk", res->body);
     EXPECT_EQ(206, res->status);
@@ -4637,6 +4810,26 @@ TEST_F(PayloadMaxLengthTest, ExceedLimit) {
   EXPECT_EQ(200, res->status);
 }
 
+TEST(HostAndPortPropertiesTest, NoSSL) {
+  httplib::Client cli("www.google.com", 1234);
+  ASSERT_EQ("www.google.com", cli.host());
+  ASSERT_EQ(1234, cli.port());
+}
+
+TEST(HostAndPortPropertiesTest, NoSSLWithSimpleAPI) {
+  httplib::Client cli("www.google.com:1234");
+  ASSERT_EQ("www.google.com", cli.host());
+  ASSERT_EQ(1234, cli.port());
+}
+
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+TEST(HostAndPortPropertiesTest, SSL) {
+  httplib::SSLClient cli("www.google.com");
+  ASSERT_EQ("www.google.com", cli.host());
+  ASSERT_EQ(443, cli.port());
+}
+#endif
+
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 TEST(SSLClientTest, UpdateCAStore) {
   httplib::SSLClient httplib_client("www.google.com");
@@ -4652,8 +4845,16 @@ TEST(SSLClientTest, UpdateCAStore) {
 }
 
 TEST(SSLClientTest, ServerNameIndication_Online) {
-  SSLClient cli("httpbin.org", 443);
-  auto res = cli.Get("/get");
+#ifdef CPPHTTPLIB_DEFAULT_HTTPBIN
+  auto host = "httpbin.org";
+  auto path = std::string{"/get"};
+#else
+  auto host = "nghttp2.org";
+  auto path = std::string{"/httpbin/get"};
+#endif
+
+  SSLClient cli(host, 443);
+  auto res = cli.Get(path);
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
 }
@@ -4708,6 +4909,49 @@ TEST(SSLClientTest, ServerCertificateVerification4) {
   auto res = cli.Get("/test");
   ASSERT_TRUE(res);
   ASSERT_EQ(200, res->status);
+}
+
+TEST(SSLClientTest, ServerCertificateVerification5_Online) {
+  std::string cert;
+  detail::read_file(CA_CERT_FILE, cert);
+
+  SSLClient cli("google.com");
+  cli.load_ca_cert_store(cert.data(), cert.size());
+  const auto res = cli.Get("/");
+  ASSERT_TRUE(res);
+  ASSERT_EQ(301, res->status);
+}
+
+TEST(SSLClientTest, ServerCertificateVerification6_Online) {
+  // clang-format off
+  static constexpr char cert[] =
+    "GlobalSign Root CA\n"
+    "==================\n"
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkGA1UEBhMCQkUx\n"
+    "GTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkds\n"
+    "b2JhbFNpZ24gUm9vdCBDQTAeFw05ODA5MDExMjAwMDBaFw0yODAxMjgxMjAwMDBaMFcxCzAJBgNV\n"
+    "BAYTAkJFMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMRAwDgYDVQQLEwdSb290IENBMRswGQYD\n"
+    "VQQDExJHbG9iYWxTaWduIFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDa\n"
+    "DuaZjc6j40+Kfvvxi4Mla+pIH/EqsLmVEQS98GPR4mdmzxzdzxtIK+6NiY6arymAZavpxy0Sy6sc\n"
+    "THAHoT0KMM0VjU/43dSMUBUc71DuxC73/OlS8pF94G3VNTCOXkNz8kHp1Wrjsok6Vjk4bwY8iGlb\n"
+    "Kk3Fp1S4bInMm/k8yuX9ifUSPJJ4ltbcdG6TRGHRjcdGsnUOhugZitVtbNV4FpWi6cgKOOvyJBNP\n"
+    "c1STE4U6G7weNLWLBYy5d4ux2x8gkasJU26Qzns3dLlwR5EiUWMWea6xrkEmCMgZK9FGqkjWZCrX\n"
+    "gzT/LCrBbBlDSgeF59N89iFo7+ryUp9/k5DPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV\n"
+    "HRMBAf8EBTADAQH/MB0GA1UdDgQWBBRge2YaRQ2XyolQL30EzTSo//z9SzANBgkqhkiG9w0BAQUF\n"
+    "AAOCAQEA1nPnfE920I2/7LqivjTFKDK1fPxsnCwrvQmeU79rXqoRSLblCKOzyj1hTdNGCbM+w6Dj\n"
+    "Y1Ub8rrvrTnhQ7k4o+YviiY776BQVvnGCv04zcQLcFGUl5gE38NflNUVyRRBnMRddWQVDf9VMOyG\n"
+    "j/8N7yy5Y0b2qvzfvGn9LhJIZJrglfCm7ymPAbEVtQwdpf5pLGkkeB6zpxxxYu7KyJesF12KwvhH\n"
+    "hm4qxFYxldBniYUr+WymXUadDKqC5JlR3XC321Y9YeRq4VzW9v493kHMB65jUr9TU/Qr6cf9tveC\n"
+    "X4XSQRjbgbMEHMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==\n"
+    "-----END CERTIFICATE-----\n";
+  // clang-format on
+
+  SSLClient cli("google.com");
+  cli.load_ca_cert_store(cert, sizeof(cert));
+  const auto res = cli.Get("/");
+  ASSERT_TRUE(res);
+  ASSERT_EQ(301, res->status);
 }
 
 TEST(SSLClientTest, WildcardHostNameMatch_Online) {
@@ -5194,7 +5438,7 @@ TEST(YahooRedirectTest2, SimpleInterface_Online) {
   res = cli.Get("/");
   ASSERT_TRUE(res);
   EXPECT_EQ(200, res->status);
-  EXPECT_EQ("https://yahoo.com/", res->location);
+  EXPECT_EQ("https://www.yahoo.com/", res->location);
 }
 
 TEST(YahooRedirectTest3, SimpleInterface_Online) {
@@ -5910,6 +6154,120 @@ TEST(MultipartFormDataTest, PutInvalidBoundaryChars) {
   }
 }
 
+TEST(MultipartFormDataTest, AlternateFilename) {
+  auto handled = false;
+
+  Server svr;
+  svr.Post("/test", [&](const Request &req, Response &res) {
+    ASSERT_EQ(3u, req.files.size());
+
+    auto it = req.files.begin();
+    ASSERT_EQ("file1", it->second.name);
+    ASSERT_EQ("A.txt", it->second.filename);
+    ASSERT_EQ("text/plain", it->second.content_type);
+    ASSERT_EQ("Content of a.txt.\r\n", it->second.content);
+
+    ++it;
+    ASSERT_EQ("file2", it->second.name);
+    ASSERT_EQ("a.html", it->second.filename);
+    ASSERT_EQ("text/html", it->second.content_type);
+    ASSERT_EQ("<!DOCTYPE html><title>Content of a.html.</title>\r\n",
+              it->second.content);
+
+    ++it;
+    ASSERT_EQ("text", it->second.name);
+    ASSERT_EQ("", it->second.filename);
+    ASSERT_EQ("", it->second.content_type);
+    ASSERT_EQ("text default", it->second.content);
+
+    res.set_content("ok", "text/plain");
+
+    handled = true;
+  });
+
+  thread t = thread([&] { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+    ASSERT_TRUE(handled);
+  });
+
+  svr.wait_until_ready();
+
+  auto req = "POST /test HTTP/1.1\r\n"
+             "Content-Type: multipart/form-data;boundary=--------\r\n"
+             "Content-Length: 399\r\n"
+             "\r\n"
+             "----------\r\n"
+             "Content-Disposition: form-data; name=\"text\"\r\n"
+             "\r\n"
+             "text default\r\n"
+             "----------\r\n"
+             "Content-Disposition: form-data; filename*=\"UTF-8''\%41.txt\"; "
+             "filename=\"a.txt\"; name=\"file1\"\r\n"
+             "Content-Type: text/plain\r\n"
+             "\r\n"
+             "Content of a.txt.\r\n"
+             "\r\n"
+             "----------\r\n"
+             "Content-Disposition: form-data;  name=\"file2\" ;filename = "
+             "\"a.html\"\r\n"
+             "Content-Type: text/html\r\n"
+             "\r\n"
+             "<!DOCTYPE html><title>Content of a.html.</title>\r\n"
+             "\r\n"
+             "------------\r\n";
+
+  ASSERT_TRUE(send_request(1, req));
+}
+
+TEST(MultipartFormDataTest, CloseDelimiterWithoutCRLF) {
+  auto handled = false;
+
+  Server svr;
+  svr.Post("/test", [&](const Request &req, Response &) {
+    ASSERT_EQ(2u, req.files.size());
+
+    auto it = req.files.begin();
+    ASSERT_EQ("text1", it->second.name);
+    ASSERT_EQ("text1", it->second.content);
+
+    ++it;
+    ASSERT_EQ("text2", it->second.name);
+    ASSERT_EQ("text2", it->second.content);
+
+    handled = true;
+  });
+
+  thread t = thread([&] { svr.listen(HOST, PORT); });
+  auto se = detail::scope_exit([&] {
+    svr.stop();
+    t.join();
+    ASSERT_FALSE(svr.is_running());
+    ASSERT_TRUE(handled);
+  });
+
+  svr.wait_until_ready();
+
+  auto req = "POST /test HTTP/1.1\r\n"
+             "Content-Type: multipart/form-data;boundary=--------\r\n"
+             "Content-Length: 146\r\n"
+             "\r\n----------\r\n"
+             "Content-Disposition: form-data; name=\"text1\"\r\n"
+             "\r\n"
+             "text1"
+             "\r\n----------\r\n"
+             "Content-Disposition: form-data; name=\"text2\"\r\n"
+             "\r\n"
+             "text2"
+             "\r\n------------";
+
+  std::string resonse;
+  ASSERT_TRUE(send_request(1, req, &resonse));
+  ASSERT_EQ("200", resonse.substr(9, 3));
+}
+
 #endif
 
 #ifndef _WIN32
@@ -6121,19 +6479,19 @@ TEST(RedirectTest, RedirectToUrlWithQueryParameters) {
 TEST(VulnerabilityTest, CRLFInjection) {
   Server svr;
 
-  svr.Post("/test1", [](const Request &/*req*/, Response &res) {
+  svr.Post("/test1", [](const Request & /*req*/, Response &res) {
     res.set_content("Hello 1", "text/plain");
   });
 
-  svr.Delete("/test2", [](const Request &/*req*/, Response &res) {
+  svr.Delete("/test2", [](const Request & /*req*/, Response &res) {
     res.set_content("Hello 2", "text/plain");
   });
 
-  svr.Put("/test3", [](const Request &/*req*/, Response &res) {
+  svr.Put("/test3", [](const Request & /*req*/, Response &res) {
     res.set_content("Hello 3", "text/plain");
   });
 
-  svr.Patch("/test4", [](const Request &/*req*/, Response &res) {
+  svr.Patch("/test4", [](const Request & /*req*/, Response &res) {
     res.set_content("Hello 4", "text/plain");
   });
 
@@ -6162,4 +6520,141 @@ TEST(VulnerabilityTest, CRLFInjection) {
     cli.Put("/test3", "text", "text/plain\r\nevil: hello3");
     cli.Patch("/test4", "content", "text/plain\r\nevil: hello4");
   }
+}
+
+TEST(PathParamsTest, StaticMatch) {
+  const auto pattern = "/users/all";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/all";
+  ASSERT_TRUE(matcher.match(request));
+
+  std::unordered_map<std::string, std::string> expected_params = {};
+
+  EXPECT_EQ(request.path_params, expected_params);
+}
+
+TEST(PathParamsTest, StaticMismatch) {
+  const auto pattern = "/users/all";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/1";
+  ASSERT_FALSE(matcher.match(request));
+}
+
+TEST(PathParamsTest, SingleParamInTheMiddle) {
+  const auto pattern = "/users/:id/subscriptions";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/42/subscriptions";
+  ASSERT_TRUE(matcher.match(request));
+
+  std::unordered_map<std::string, std::string> expected_params = {{"id", "42"}};
+
+  EXPECT_EQ(request.path_params, expected_params);
+}
+
+TEST(PathParamsTest, SingleParamInTheEnd) {
+  const auto pattern = "/users/:id";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/24";
+  ASSERT_TRUE(matcher.match(request));
+
+  std::unordered_map<std::string, std::string> expected_params = {{"id", "24"}};
+
+  EXPECT_EQ(request.path_params, expected_params);
+}
+
+TEST(PathParamsTest, SingleParamInTheEndTrailingSlash) {
+  const auto pattern = "/users/:id/";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/42/";
+  ASSERT_TRUE(matcher.match(request));
+  std::unordered_map<std::string, std::string> expected_params = {{"id", "42"}};
+
+  EXPECT_EQ(request.path_params, expected_params);
+}
+
+TEST(PathParamsTest, EmptyParam) {
+  const auto pattern = "/users/:id/";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users//";
+  ASSERT_TRUE(matcher.match(request));
+
+  std::unordered_map<std::string, std::string> expected_params = {{"id", ""}};
+
+  EXPECT_EQ(request.path_params, expected_params);
+}
+
+TEST(PathParamsTest, FragmentMismatch) {
+  const auto pattern = "/users/:id/";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/admins/24/";
+  ASSERT_FALSE(matcher.match(request));
+}
+
+TEST(PathParamsTest, ExtraFragments) {
+  const auto pattern = "/users/:id";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/42/subscriptions";
+  ASSERT_FALSE(matcher.match(request));
+}
+
+TEST(PathParamsTest, MissingTrailingParam) {
+  const auto pattern = "/users/:id";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users";
+  ASSERT_FALSE(matcher.match(request));
+}
+
+TEST(PathParamsTest, MissingParamInTheMiddle) {
+  const auto pattern = "/users/:id/subscriptions";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/subscriptions";
+  ASSERT_FALSE(matcher.match(request));
+}
+
+TEST(PathParamsTest, MultipleParams) {
+  const auto pattern = "/users/:userid/subscriptions/:subid";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/users/42/subscriptions/2";
+  ASSERT_TRUE(matcher.match(request));
+
+  std::unordered_map<std::string, std::string> expected_params = {
+      {"userid", "42"}, {"subid", "2"}};
+
+  EXPECT_EQ(request.path_params, expected_params);
+}
+
+TEST(PathParamsTest, SequenceOfParams) {
+  const auto pattern = "/values/:x/:y/:z";
+  detail::PathParamsMatcher matcher(pattern);
+
+  Request request;
+  request.path = "/values/1/2/3";
+  ASSERT_TRUE(matcher.match(request));
+
+  std::unordered_map<std::string, std::string> expected_params = {
+      {"x", "1"}, {"y", "2"}, {"z", "3"}};
+
+  EXPECT_EQ(request.path_params, expected_params);
 }

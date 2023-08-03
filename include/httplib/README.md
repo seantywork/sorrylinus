@@ -94,11 +94,20 @@ int main(void)
     res.set_content("Hello World!", "text/plain");
   });
 
+  // Match the request path against a regular expression
+  // and extract its captures
   svr.Get(R"(/numbers/(\d+))", [&](const Request& req, Response& res) {
     auto numbers = req.matches[1];
     res.set_content(numbers, "text/plain");
   });
 
+  // Capture the second segment of the request path as "id" path param
+  svr.Get("/users/:id", [&](const Request& req, Response& res) {
+    auto user_id = req.path_params.at("id");
+    res.set_content(user_id, "text/plain");
+  });
+
+  // Extract values from HTTP headers and URL query params
   svr.Get("/body-header-param", [](const Request& req, Response& res) {
     if (req.has_header("Content-Length")) {
       auto val = req.get_header_value("Content-Length");
@@ -181,6 +190,8 @@ The followings are built-in mappings:
 | webm       | video/webm                  | zip        | application/zip             |
 | mp3        | audio/mp3                   | wasm       | application/wasm            |
 
+NOTE: These static file server methods are not thread-safe.
+
 ### File request handler
 
 ```cpp
@@ -189,8 +200,6 @@ svr.set_file_request_handler([](const Request &req, Response &res) {
   ...
 });
 ```
-
-NOTE: These static file server methods are not thread-safe.
 
 ### Logging
 
@@ -303,7 +312,7 @@ svr.Get("/stream", [&](const Request &req, Response &res) {
   res.set_content_provider(
     data->size(), // Content length
     "text/plain", // Content type
-    [data](size_t offset, size_t length, DataSink &sink) {
+    [&, data](size_t offset, size_t length, DataSink &sink) {
       const auto &d = *data;
       sink.write(&d[offset], std::min(length, DATA_CHUNK_SIZE));
       return true; // return 'false' if you want to cancel the process.
