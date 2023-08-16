@@ -4986,7 +4986,7 @@ inline bool parse_www_authenticate(const Response &res,
         s = s.substr(pos + 1);
         auto beg = std::sregex_iterator(s.begin(), s.end(), re);
         for (auto i = beg; i != std::sregex_iterator(); ++i) {
-          auto m = *i;
+          const auto &m = *i;
           auto key = s.substr(static_cast<size_t>(m.position(1)),
                               static_cast<size_t>(m.length(1)));
           auto val = m.length(2) > 0
@@ -6723,9 +6723,9 @@ inline bool ClientImpl::read_response_line(Stream &strm, const Request &req,
   if (!line_reader.getline()) { return false; }
 
 #ifdef CPPHTTPLIB_ALLOW_LF_AS_LINE_TERMINATOR
-  const static std::regex re("(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r\n");
-#else
   const static std::regex re("(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r?\n");
+#else
+  const static std::regex re("(HTTP/1\\.[01]) (\\d{3})(?: (.*?))?\r\n");
 #endif
 
   std::cmatch m;

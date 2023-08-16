@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+destroy_ap () {
+
+	sudo apt-get remove --purge hostapd
+
+	sudo apt-get remove --purge dnsmasq
+
+	echo "=====> Access Point Mode has been reset"
+
+	sudo reboot
+
+}
+
+
+echo "Access Point Mode will be reset."
+echo "System will be rebooted after the procedure succeeds."
+echo "Proceed? [Yn] :"
+read YN
+
+if [ $YN != "Y" ]
+then
+	echo "aborted."
+	exit 0
+fi
+
+destroy_ap
+
+
+
+
+
+
+
+

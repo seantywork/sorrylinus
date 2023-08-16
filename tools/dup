@@ -1,0 +1,46 @@
+#!/bin/bash
+
+
+set -e
+
+if (( $EUID == 0 )); then
+    echo "Do not run as root"
+    exit 0
+fi
+
+echo "Dependency UPdator"
+
+mkdir -p cchttplib
+
+mkdir -p ccwslib
+
+mkdir -p json
+
+git -C ./cchttplib init
+
+git -C ./ccwslib init
+
+git -C ./json init
+
+git -C ./cchttplib pull https://github.com/seantywork/cpp-httplib.git master
+
+git -C ./ccwslib pull https://github.com/seantywork/websocketpp.git master 
+
+git -C ./json pull https://github.com/seantywork/json.git develop
+
+/bin/cp -rf ./cchttplib/httplib.h ../include/httplib/httplib.h
+
+/bin/cp -rf ./ccwslib/websocketpp/* ../include/wslib
+
+/bin/cp -rf ./json/single_include/nlohmann/* ../include/nlohmann
+
+sudo rm -r ./cchttplib
+
+sudo rm -r ./ccwslib
+
+sudo rm -r ./json
+
+echo "Successfully updated"
+
+
+

@@ -106,5 +106,7 @@ Thanks To
 -----------------
 - Http Lib
 [Yuji Hirose](https://github.com/yhirose/cpp-httplib)
+- Ws Lib
+[Peter Thorson](https://github.com/zaphoyd/websocketpp)
 - JSON Parser
 [Niels Lohmann](https://github.com/nlohmann/json)

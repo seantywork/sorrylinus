@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+
+if ! command -v g++ &> /dev/null
+then
+    echo "Installing missing build tools"
+    sudo apt-get update 
+    sudo apt-get -y install build-essential=12.8ubuntu1.1
+fi
+
+echo "=====> Build tools prepared"
+
+
+if ! command -v sqlite3 &> /dev/null
+then
+    echo "Installing sqlite3 dependency"
+    sudo apt-get update 
+    sudo apt-get -y install sqlite3=3.31.1-4ubuntu0.5 libsqlite3-dev=3.31.1-4ubuntu0.5
+fi
+
+echo "=====> Dependency prepared"
+
+
+
