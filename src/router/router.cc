@@ -1,7 +1,7 @@
 #ifndef PREPROCESSOR_HEADER 
 #define PREPROCESSOR_HEADER 
-#include "../../include/httplib/httplib.h"
-#include "../../include/nlohmann/json.hpp"
+#include <httplib/httplib.h>
+#include <jsonlib/json.hpp>
 #endif
 
 #include "../controller/controller.cc"

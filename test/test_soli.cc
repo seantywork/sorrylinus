@@ -1,7 +1,7 @@
 #include <iostream>
 
 extern "C"{
-#include <sorrylinus/test/soliapi_test.h>    
+#include <sorrylinusmod/test/solimod_test.h>    
 }
 
 

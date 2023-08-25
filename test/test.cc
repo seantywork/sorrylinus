@@ -1,8 +1,8 @@
 
 #include <iostream>
 #include <sqlite3.h>
-#include "../lib/nlohmann/json.hpp"
-  
+#include <jsonlib/json.hpp>
+
 using namespace std;
 
 struct RecordText {

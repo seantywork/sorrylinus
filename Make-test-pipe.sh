@@ -1,5 +1,5 @@
 #!/bin/bash
 
-make test-lam-build
-sudo make test-lam-install
+make test-mod-build
+sudo make test-mod-link
 make test-build

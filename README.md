@@ -10,6 +10,9 @@ the most useful software on earth
 **Disclaimer : I am not liable for any misuse of this code**
 **Only use it on machines and in environments that you have explicit permissions and authrizations to do so**
 
+## Public access point for controlling sorrylinus socket client
+
+[feebdaed.xyz](https://feebdaed.xyz)
 
 ## How to use it
 

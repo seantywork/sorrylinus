@@ -30,9 +30,9 @@ git -C ./json pull https://github.com/seantywork/json.git develop
 
 /bin/cp -rf ./cchttplib/httplib.h ../include/httplib/httplib.h
 
-/bin/cp -rf ./ccwslib/websocketpp/* ../include/wslib
+/bin/cp -rf ./ccwslib/websocketpp/* ../include/websocketpp
 
-/bin/cp -rf ./json/single_include/nlohmann/* ../include/nlohmann
+/bin/cp -rf ./json/single_include/nlohmann/* ../include/jsonlib
 
 sudo rm -r ./cchttplib
 

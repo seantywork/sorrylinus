@@ -1,4 +1,6 @@
-#include "../../include/test/soliapi_test.h"
+#include <sorrylinusmod/test/solimod_test.h>
+
+
 
 
 int soli_test_method(){
