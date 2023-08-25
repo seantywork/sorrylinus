@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+        frankdb:
+                build: ./mysql
+                container_name: frankdb
+                ports:
+                        - "3306:3306"
+
+        frankthecloud:
+                build: ./frank
+                container_name: frankthecloud
+                ports:
+                        - "8000:8000"
+                depends_on:
+                        - frankdb
+              
