@@ -16,20 +16,20 @@ clean: src/soliapp
 	rm -r src/soliapp
 
 
-test-build: tools/test_soli.cc
+test-build: test/test_soli.cc
 
-	g++ -Wall -L${USR_LOCAL_LIB_PREFIX}/sorrylinus/test -Wl,-rpath=${USR_LOCAL_LIB_PREFIX}/sorrylinus/test  tools/test_soli.cc -o tools/testsoli -l soliapi_test 
+	g++ -Wall -L${USR_LOCAL_LIB_PREFIX}/sorrylinus/test -Wl,-rpath=${USR_LOCAL_LIB_PREFIX}/sorrylinus/test -o test/testsoli test/test_soli.cc -lsoliapi_test 
 
 
-test-clean: tools/testsoli
+test-clean: test/testsoli
 	
-	rm -r tools/testsoli 
+	rm -r test/testsoli 
 
-test-lam-build: lib/test/soliapi_test.cc
+test-lam-build: lib/test/soliapi_test.c
 
-	g++ -fPIC -c -Wall lib/test/soliapi_test.cc -o soliapi_test.o
+	gcc -c -Wall -o soliapi_test.o -fpic lib/test/soliapi_test.c
 
-	g++ -shared soliapi_test.o -o libsoliapi_test.so
+	gcc -shared -o libsoliapi_test.so soliapi_test.o
 
 
 test-lam-install: libsoliapi_test.so

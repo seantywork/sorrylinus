@@ -1,5 +1,8 @@
 #include <iostream>
-#include <sorrylinus/test/soliapi_test.h>
+
+extern "C"{
+#include <sorrylinus/test/soliapi_test.h>    
+}
 
 
 using namespace std;
@@ -8,14 +11,13 @@ using namespace std;
 
 int main (){
 
-    SoLiTest slt;
 
     int check;
 
-    check = slt.SoLiTestMethod();
 
-    cout << check << endl;
+    check = soli_test_method();
 
+    cout << "exit with: " << check << endl;
 
 
     return 0;
