@@ -39,6 +39,10 @@ dep-uninstall:
 	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/jsonlib
 	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/websocketpp
 
+dep-install-lib:
+
+	sudo apt-get install -y libboost-all-dev
+
 
 dep-install-solimod:
 

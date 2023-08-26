@@ -2,3 +2,7 @@
 *.crt
 *.csr
 *.pem
+VENV
+.env
+flask_session
+__pycache__

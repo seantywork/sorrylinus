@@ -1,0 +1,1 @@
+# g++ -pthread -o hub server.cc -lssl -lcrypto
