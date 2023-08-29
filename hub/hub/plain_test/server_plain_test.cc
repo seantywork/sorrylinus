@@ -2,12 +2,47 @@
 #ifndef PREPROCESSOR_HEADER_SOCK
 #define PREPROCESSOR_HEADER_SOCK
 
-#include "./sock_resource.h"
+#include "./sock_resource_plain_test.h"
 
 #endif
 
-#include "./path_handle.cc"
+std::future<std::string> AWAIT;
 
+
+std::string async_callback_test(std::string words){
+
+  sleep(5);
+
+  words += " ...after a few seconds";
+
+  return words;
+
+}
+
+
+void ph_sock_client_plain_test(server* hub, 
+                         std::vector<connection_hdl>* connections,
+                         connection_hdl hdl,
+                         websocketpp::config::asio::message_type::ptr msg){
+
+    std::string send_back_payload;
+ 
+
+    std::string test_words = "hello from the hub";
+
+    AWAIT = std::async(std::launch::async, async_callback_test, test_words);
+
+    std::cout << "waiting a few seconds..." << std::endl;
+
+    send_back_payload = AWAIT.get();
+
+    send_message(hub, &hdl, send_back_payload);
+
+
+    std::cout << "on_message:" << msg->get_payload() << std::endl;
+    return;
+    
+}
 
 void on_message(server* hub, std::vector<connection_hdl>* connections,
                 connection_hdl hdl,
@@ -19,20 +54,20 @@ void on_message(server* hub, std::vector<connection_hdl>* connections,
 
   if (url_path == "/sock-client"){
 
-    ph_sock_client(hub, connections, hdl, msg);
+    // ph_sock_client(hub, connections, hdl, msg);
 
   } else if (url_path == "/front-client"){
 
-    ph_front_client(hub, connections, hdl, msg);
+    // ph_front_client(hub, connections, hdl, msg);
 
   } else if (url_path == "/sock-client/test"){
     
-    ph_sock_client_test(hub, connections, hdl, msg);
+    ph_sock_client_plain_test(hub, connections, hdl, msg);
 
   
   } else if (url_path == "/front-client/test"){
 
-    ph_front_client_test(hub, connections, hdl, msg);
+    // ph_front_client_test(hub, connections, hdl, msg);
 
   } else {
 
@@ -83,22 +118,7 @@ void set_close_handler(server& hub,
 
 
 
-websocketpp::lib::shared_ptr<ssl_context> on_tls_init(connection_hdl hdl) {
-  auto ctx = websocketpp::lib::make_shared<ssl_context>(ssl_context::sslv23);
 
-  std::cout << "on_tls_init called with hdl: " << hdl.lock().get() << std::endl;
-
-  ctx->use_certificate_chain_file("tls/sub.crt");
-  ctx->use_private_key_file("tls/sub_priv.pem", ssl_context::pem);
-  
-
-  return ctx;
-}
-
-
-void set_tls_init_handler(server& hub) {
-  hub.set_tls_init_handler(websocketpp::lib::bind(&on_tls_init, ::_1));
-}
 
 
 int main() {
@@ -111,7 +131,6 @@ int main() {
   hub.init_asio();
 
   set_message_handler(hub, connections);
-  set_tls_init_handler(hub);
   set_open_handler(hub, connections);
   set_close_handler(hub, connections);
 
@@ -131,10 +150,9 @@ int main() {
 
   hub.listen(ep);
   hub.start_accept();
-  hub.run();
+  //hub.run();
+  
 
-} 
-/*
   websocketpp::lib::thread t1(&server::run, &hub);
 
   std::string name;
@@ -155,11 +173,11 @@ int main() {
                 << std::endl;
     } else {
       std::string msg{name + ": " + input};
-      std::cout<< VERIFIED_SOCK_CONNS.size() << std::endl;
-      connection_hdl* connection = &VERIFIED_SOCK_CONNS[0];
+
+      connection_hdl* connection = &connections[0];
+
       send_message(&hub, connection, msg);
     }
   }
   t1.join();
 }
-*/

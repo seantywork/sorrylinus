@@ -2,6 +2,7 @@
 *.crt
 *.csr
 *.pem
+*.srl
 VENV
 .env
 flask_session

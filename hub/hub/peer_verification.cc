@@ -53,6 +53,52 @@ void cert_info(const char* cert_pem)
     X509_free(x509);
 }
 
+
+bool check_if_verified_conn(std::vector<connection_hdl>* connections,
+                            connection_hdl hdl){
+
+  bool status = false;
+
+  for (auto& connection : *connections) {
+    if (connection.lock() == hdl.lock()) {
+      status = true;
+    }
+  }
+
+  std::cout << "verified connections: " << connections->size() << std::endl;
+  std::cout << "verified status: " << status << std::endl;
+  return status;
+}
+
+bool authenticate_request(websocketpp::config::asio::message_type::ptr msg){
+
+
+  bool result = false;
+
+  std::string payload = msg->get_payload();
+
+  const char * cert_pem = payload.c_str();
+
+
+  std::ifstream in_cert("tls/ca.crt");
+  std::stringstream buffer;
+
+  std::string ca_payload;
+
+  buffer << in_cert.rdbuf();
+
+  ca_payload = buffer.str();
+
+  const char * intermediate_pem = ca_payload.c_str();
+
+  int v = sig_verify(cert_pem, intermediate_pem);
+
+  if(v >= 1){
+    result = true;
+  }
+  return result;
+}
+
 int test_verify(){
 
 
@@ -126,3 +172,5 @@ int test_verify(){
 
     return res;
 }
+
+

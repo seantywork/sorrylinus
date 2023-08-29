@@ -19,7 +19,7 @@ endif
 
 all: src/app.cc
 
-	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/mod -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/mod -o src/soliapp src/app.cc -lsqlite3 -lsolimod
+	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/mod -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/mod -o src/soliapp src/app.cc -lsolimod -lsqlite3 -lssl -lcrypto
 
 
 dep-install:
@@ -60,7 +60,11 @@ dep-uninstall-solimod:
 
 build: src/app.cc
 
-	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/mod -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/mod -o src/soliapp src/app.cc -lsqlite3 -lsolimod
+	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/mod -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/mod -o src/soliapp src/app.cc -lsolimod -lsqlite3 -lssl -lcrypto 
+
+build-no-mod: src/app.cc
+
+	g++ -Wall -pthread -o src/soliapp src/app.cc -lsqlite3 -lssl -lcrypto
 
 
 clean: src/soliapp

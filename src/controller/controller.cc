@@ -1,3 +1,9 @@
+#ifdef SOLIMOD_ENABLED
+#include "../module/module.cc"
+#elif SOLIMOD_ENABLED_TEST
+#include "../module/module.cc"
+#endif
+
 #ifndef PREPROCESSOR_HEADER 
 #define PREPROCESSOR_HEADER 
 #include <httplib/httplib.h>

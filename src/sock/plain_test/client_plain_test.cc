@@ -1,17 +1,17 @@
 #include <websocketpp/client.hpp>
-//#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/config/asio_client.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
+//#include <websocketpp/config/asio_client.hpp>
 #include <fstream>
 
 
-//using client = websocketpp::client<websocketpp::config::asio_client>;
+using client = websocketpp::client<websocketpp::config::asio_client>;
 using connection_hdl = websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 
 
-using client = websocketpp::client<websocketpp::config::asio_tls_client>;
-using ssl_context = websocketpp::lib::asio::ssl::context;
+//using client = websocketpp::client<websocketpp::config::asio_tls_client>;
+//using ssl_context = websocketpp::lib::asio::ssl::context;
 
 
 
@@ -67,48 +67,8 @@ void set_url(client& sock, std::string url) {
 }
 
 
-bool verify_certificate(client* sock, connection_hdl* connection,bool preverified, boost::asio::ssl::verify_context& ctx) {
-  
-    int depth = X509_STORE_CTX_get_error_depth(ctx.native_handle());
+int main() {
 
-    if (depth == 0 && preverified) {
-        std::cout << "peer verified "<< std::endl;
-    } 
-    
-    if (preverified == false){
-
-      std::cout << "peer verification failed "<< std::endl;
-      close_connection(sock, connection);
-
-    }
-
-    return preverified;
-}
-
-
-websocketpp::lib::shared_ptr<ssl_context> on_tls_init(client* sock, connection_hdl* connection) {
-  auto ctx = websocketpp::lib::make_shared<ssl_context>(
-      boost::asio::ssl::context::sslv23);
-
-  ctx->set_verify_mode(boost::asio::ssl::verify_peer);
-  ctx->set_verify_callback(bind(&verify_certificate, sock, connection, ::_1, ::_2));
- 
-  ctx->load_verify_file("sock/tls/ca.crt");
-
-  
-  return ctx;
-}
-
-void set_tls_init_handler(client* sock, connection_hdl* connection) {
-  sock->set_tls_init_handler(websocketpp::lib::bind(&on_tls_init, sock, connection));
-}
-
-
-void run_sock_client(std::string remote_addr) {
-
-  std::cout << "entering SOCK mode..." << std::endl;
-
-  std::cout << "-----> TARGET ADDRESS: " << remote_addr << std::endl;
 
   client sock;
 
@@ -118,15 +78,41 @@ void run_sock_client(std::string remote_addr) {
 
   sock.init_asio();
 
-  set_tls_init_handler(&sock, &connection);
   set_open_handler(sock, &connection);
   set_message_handler(sock);
-
+  std::string remote_addr = "ws://localhost:3001/sock-client/test";
   set_url(sock, remote_addr);
 
   websocketpp::lib::thread t1(&client::run, &sock);
 
+  
+  bool done = false;
+  std::string input;
+  std::string name;
+
+  std::cout << "Name: ";
+  std::getline(std::cin, name);
+
+  while (!done) {
+    std::getline(std::cin, input);
+    if (input == "close") {
+      done = true;
+      close_connection(&sock, &connection);
+    } else if (input == "help") {
+      std::cout << "\nCommand List:\n"
+                << "close\n"
+                << "<message>\n"
+                << "help: Display this help text\n"
+                << std::endl;
+    } else {
+      std::string msg{name + ": " + input};
+      send_message(&sock, &connection, msg);
+    }
+  }
+
   t1.join();
+
+  return 0;
 }
 
 
