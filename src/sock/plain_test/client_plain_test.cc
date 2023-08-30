@@ -32,16 +32,8 @@ void on_message(client* client, connection_hdl hdl,
 
 void on_open(client* sock, connection_hdl* connection ,connection_hdl hdl) {
   *connection = hdl;
-  std::cout << "on_open: send cert" << std::endl;
 
-  std::ifstream in_cert("sock/tls/sub_client.crt");
-  std::stringstream buffer;
-
-  std::string msg;
-
-  buffer << in_cert.rdbuf();
-
-  msg = buffer.str();
+  std::string msg = "hello!!!!";
 
   sock->send(hdl, msg, websocketpp::frame::opcode::text);
 }
@@ -80,7 +72,7 @@ int main() {
 
   set_open_handler(sock, &connection);
   set_message_handler(sock);
-  std::string remote_addr = "ws://localhost:3001/sock-client/test";
+  std::string remote_addr = "ws://localhost:3000";
   set_url(sock, remote_addr);
 
   websocketpp::lib::thread t1(&client::run, &sock);

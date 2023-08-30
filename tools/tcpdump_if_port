@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ -z "$1" ]
+then
+    echo "feed interface"
+    exit 1
+fi
+
+if [ -z "$2" ]
+then
+    echo "feed port"
+    exit 1
+fi
+
+IFACE="$1"
+
+PORT="$2"
+
+sudo tcpdump -i $IFACE -A -X -c 20 port $PORT
+

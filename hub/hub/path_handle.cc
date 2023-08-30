@@ -15,19 +15,21 @@ void ph_sock_client(server* hub,
                     connection_hdl hdl,
                     websocketpp::config::asio::message_type::ptr msg){
 
-    bool verification_status = check_if_verified_conn(&VERIFIED_SOCK_CONNS, hdl);
+    std::string verification_status = check_if_verified_conn(&VERIFIED_SOCK_CONNS_OWNER, hdl);
     std::cout << "on_message: v_stat:" << verification_status << std::endl;
-    if (!verification_status){
+    std::string result;
+    if (verification_status == "FAIL"){
 
-      bool result = authenticate_request(msg);
+      result = authenticate_request(msg);
       
-      if (!result){
+      if (result == "FAIL"){
         std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
         remove_connection(hub, connections, hdl);
 
       }else {
         std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
-        VERIFIED_SOCK_CONNS.push_back(hdl);    
+        std::cout << "auth success: add verified connection:" << result << std::endl;
+        register_verified_connections_sock(hub, connections, hdl, result);   
       }  
 
       return;
@@ -44,7 +46,11 @@ void ph_sock_client(server* hub,
 
 std::string async_callback_test(std::string words){
 
-  sleep(5);
+
+  for(int i =0;i < 5; i++){
+    std::cout << "waiting..." <<std::endl;
+    sleep(1);
+  }
 
   words += " ...after a few seconds";
 
@@ -60,21 +66,25 @@ void ph_sock_client_test(server* hub,
 
     std::string send_back_payload;
     
-    bool verification_status = check_if_verified_conn(&VERIFIED_SOCK_CONNS, hdl);
+    std::string verification_status = check_if_verified_conn(&VERIFIED_SOCK_CONNS_OWNER, hdl);
     
     std::cout << "on_message: v_stat:" << verification_status << std::endl;
     
-    if (!verification_status){
+    std::string result;
 
-      bool result = authenticate_request(msg);
+    if (verification_status == "FAIL"){
+
+      result = authenticate_request(msg);
       
-      if (!result){
+      if (result == "FAIL"){
         std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
         remove_connection(hub, connections, hdl);
 
       }else {
         std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
-        VERIFIED_SOCK_CONNS.push_back(hdl);
+        std::cout << "auth success: add verified connection:" << result << std::endl;
+
+        register_verified_connections_sock(hub, connections, hdl, result);
 
         std::string test_words = "hello from the hub";
 
@@ -129,19 +139,21 @@ void ph_front_client(server* hub,
                      websocketpp::config::asio::message_type::ptr msg){
 
 
-    bool verification_status = check_if_verified_conn(&VERIFIED_FRONT_CONNS, hdl);
+    std::string verification_status = check_if_verified_conn(&VERIFIED_FRONT_CONNS_OWNER, hdl);
     std::cout << "on_message: v_stat:" << verification_status << std::endl;
-    if (!verification_status){
+    std::string result;
+    if (verification_status == "FAIL"){
 
-      bool result = authenticate_request(msg);
+      result = authenticate_request(msg);
       
-      if (!result){
+      if (result == "FAIL"){
         std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
         remove_connection(hub, connections, hdl);
     
       }else {
         std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
-        VERIFIED_FRONT_CONNS.push_back(hdl);    
+        
+        register_verified_connections_front(hub, connections, hdl, result);      
       }  
 
       return;
@@ -158,19 +170,20 @@ void ph_front_client_test (server* hub,
                            websocketpp::config::asio::message_type::ptr msg){
 
 
-    bool verification_status = check_if_verified_conn(&VERIFIED_FRONT_CONNS, hdl);
+    std::string verification_status = check_if_verified_conn(&VERIFIED_FRONT_CONNS_OWNER, hdl);
     std::cout << "on_message: v_stat:" << verification_status << std::endl;
-    if (!verification_status){
+    std::string result;
+    if (verification_status == "FAIL"){
 
-      bool result = authenticate_request(msg);
+      result = authenticate_request(msg);
       
-      if (!result){
+      if (result == "FAIL"){
         std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
         remove_connection(hub, connections, hdl);
     
       }else {
         std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
-        VERIFIED_FRONT_CONNS.push_back(hdl);    
+        register_verified_connections_front(hub, connections, hdl, result);  
       }  
 
       return;

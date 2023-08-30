@@ -41,6 +41,8 @@ int main(int argc, char **argv){
 
   int SOCK_TEST_FLAG = 0;
 
+  int INTERACTIVE_FLAG = 0;
+
   std::string SOCK_ADDR = "";
 
   for (int i = 0; i < argc; i++){
@@ -60,6 +62,11 @@ int main(int argc, char **argv){
       if(strcmp(argv[i], "--sock-test") == 0){
         SOCK_TEST_FLAG = 1;
       }
+
+      if(strcmp(argv[i], "--interactive") == 0){
+        INTERACTIVE_FLAG = 1;
+      }
+
 
   }
 
@@ -82,7 +89,11 @@ int main(int argc, char **argv){
 
     }
 
-    run_sock_client(SOCK_ADDR);
+    if(INTERACTIVE_FLAG == 0){
+      run_sock_client(SOCK_ADDR);
+    }else{
+      run_sock_client_interactive(SOCK_ADDR);
+    }
 
 
   } else if (SOCK_TEST_FLAG == 1){
@@ -97,7 +108,12 @@ int main(int argc, char **argv){
 
     }
 
-    run_sock_client(SOCK_ADDR);
+    if(INTERACTIVE_FLAG == 0){
+      run_sock_client(SOCK_ADDR);
+    }else{
+      run_sock_client_interactive(SOCK_ADDR);
+    }
+
 
   } else {
 

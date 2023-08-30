@@ -6,7 +6,7 @@ openssl genrsa -out ./tls_bin/ca/ca_priv.pem 4096
 
 openssl rsa -in ./tls_bin/ca/ca_priv.pem -outform PEM -pubout -out ./tls_bin/ca/ca_pub.pem
 
-openssl req -x509 -new -key ./tls_bin/ca/ca_priv.pem -days 3650 -out ./tls_bin/ca/ca.crt -subj "/CN=issuerforseantywork"
+openssl req -x509 -new -key ./tls_bin/ca/ca_priv.pem -days 3650 -out ./tls_bin/ca/ca.crt -subj "/CN=ca@feebdaed.xyz"
 
 echo "hub key pair, csr generating...."
 
@@ -14,7 +14,7 @@ openssl genrsa -out ./tls_bin/hub/sub_priv.pem 4096
 
 openssl rsa -in ./tls_bin/hub/sub_priv.pem -outform PEM -pubout -out ./tls_bin/hub/sub_pub.pem
 
-openssl req -key ./tls_bin/hub/sub_priv.pem -new -sha256 -out ./tls_bin/hub/sub.csr  -subj "/CN=subjectforseantywork"
+openssl req -key ./tls_bin/hub/sub_priv.pem -new -sha256 -out ./tls_bin/hub/sub.csr  -subj "/CN=seantywork@feebdaed.xyz"
 
 echo "sock key pair, csr generating...."
 
@@ -22,7 +22,7 @@ openssl genrsa -out ./tls_bin/sock/sub_client_priv.pem 4096
 
 openssl rsa -in ./tls_bin/sock/sub_client_priv.pem -outform PEM -pubout -out ./tls_bin/sock/sub_client_pub.pem
 
-openssl req -key ./tls_bin/sock/sub_client_priv.pem -new -sha256 -out ./tls_bin/sock/sub_client.csr  -subj "/CN=subjectclientforseantywork"
+openssl req -key ./tls_bin/sock/sub_client_priv.pem -new -sha256 -out ./tls_bin/sock/sub_client.csr  -subj "/CN=seantywork@gmail.com"
 
 echo "signing requests for hub, sock...."
 

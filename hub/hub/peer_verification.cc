@@ -1,6 +1,10 @@
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
+
+#ifndef PREPROCESSOR_HEADER_SOCK
+#define PREPROCESSOR_HEADER_SOCK
+
+#include "./sock_resource.h"
+
+#endif
  
 int sig_verify(const char* cert_pem, const char* intermediate_pem)
 {
@@ -23,6 +27,8 @@ int sig_verify(const char* cert_pem, const char* intermediate_pem)
  
     return result;
 }
+
+
 
 void cert_info(const char* cert_pem)
 {
@@ -54,15 +60,23 @@ void cert_info(const char* cert_pem)
 }
 
 
-bool check_if_verified_conn(std::vector<connection_hdl>* connections,
+std::string check_if_verified_conn(std::map<void*, std::string>* connections,
                             connection_hdl hdl){
 
-  bool status = false;
+  std::string status;
 
+  /*
   for (auto& connection : *connections) {
     if (connection.lock() == hdl.lock()) {
       status = true;
     }
+  }
+  */
+
+  if (connections->find(hdl.lock().get()) == connections->end()) {
+    status = "FAIL";
+  } else {
+    status = (*connections)[hdl.lock().get()];
   }
 
   std::cout << "verified connections: " << connections->size() << std::endl;
@@ -70,8 +84,9 @@ bool check_if_verified_conn(std::vector<connection_hdl>* connections,
   return status;
 }
 
-bool authenticate_request(websocketpp::config::asio::message_type::ptr msg){
+std::string authenticate_request(websocketpp::config::asio::message_type::ptr msg){
 
+  std::string ret_c_name = "FAIL";
 
   bool result = false;
 
@@ -93,10 +108,15 @@ bool authenticate_request(websocketpp::config::asio::message_type::ptr msg){
 
   int v = sig_verify(cert_pem, intermediate_pem);
 
-  if(v >= 1){
-    result = true;
+  if(v < 1){
+    return ret_c_name;
   }
-  return result;
+
+
+  ret_c_name = extract_common_name(cert_pem);
+
+
+  return ret_c_name;
 }
 
 int test_verify(){
@@ -174,3 +194,40 @@ int test_verify(){
 }
 
 
+int test_get_sn(){
+
+      const char cert[] = "-----BEGIN CERTIFICATE-----" "\n"
+"MIIEzDCCArQCFDYtKXyRz7cbmLnlyeo8uVVGMigvMA0GCSqGSIb3DQEBCwUAMCIx" "\n"
+"IDAeBgNVBAMMF2lzc3VlcmZvcnNlYW50eXdvcmsuY29tMB4XDTIzMDgyNTEwMDAw" "\n"
+"OFoXDTI0MDIyMTEwMDAwOFowIzEhMB8GA1UEAwwYc3ViamVjdGZvcnNlYW50eXdv" "\n"
+"cmsuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAred3Rt1mmOwz" "\n"
+"HfgXUrKHNn/keHUbu1jFoE/yF0WqToTZLQ1jhgqUh/hmOrZ145rJh9GAPgVLbTnR" "\n"
+"fx8VlGxo7PQIPXhltpUbSTCRRMM6UleIcMbBj+6h0/xWoTlWDSgB4byfGyHmQs1q" "\n"
+"eEJSdgtr28KFr/gJ+vXUDITqU0ogOfLeYs5nbqjkPqq4J0eoJGDndCqZO5Emgt03" "\n"
+"dRr6BpXVSjm7WAZUPxbwOVHXsQh4KowHn7NUfWLC25a2sp5DNUNb5qNAQQPuYR9U" "\n"
+"vPlC0fCdTkEIEtoCPD51Gc/k/pmK4pbt8Trf9tYE9VODGZxgayD6yyO0y3FKmBLI" "\n"
+"Ccpu6/n9v8Wi3d/tbpNHODXhm2QIE7GI7PfPPC1fNM0q8csGdYPXd7y8CcCyV9z9" "\n"
+"hFOL6ox7FFYOZmcb/irPZVXrz7IWtxRr5aerFzgsmJFfQVibqDcWAd1MHkbufxwU" "\n"
+"hHQe9SF9+RBKtGNJHAPuUT3SOwwVOCj4fhwA71MOQ3oHT7CppcfEaBXvVuvkdh/W" "\n"
+"0grI4uBehsdGlOfkF3UO519dc2ua39ErP/JiG4l5JrHUVSgDZ70z79yAEBISvcFO" "\n"
+"w5yXTVbMyHFg4oVyUEvGtrgjWqVjNEvSo0Y+4gC7A0DWEs4RrH7B2L1a/7XnHgik" "\n"
+"/FH8spFP7XXCXT2L4SpfeOQTEWdQqfsCAwEAATANBgkqhkiG9w0BAQsFAAOCAgEA" "\n"
+"TAslifntjMebuTzzD/M9F0kGFV4QaoIZUwoNcLcvOAlgsZzKTCmJilfYxJR7ZCTI" "\n"
+"1SKCizCyo9NoKt7l6PorQeGEQbe8B9XJn2ieMR63S/PAjI73+V+s+l8/Kho/EVu4" "\n"
+"p8/c7I9DIFyhNKm3gBhXQt1N3Lk5tGIPH9pBYn8uxgrX3rerGHnTPYBFt2maGTYx" "\n"
+"QWk23vDR5HW/kciCs/MzGP16N43FgZUrwdq8ngLUAA3F8bvAbAHdS3jBqdbLipKZ" "\n"
+"fgcp8JcaO94OfDJQKdHW94cMlG5qELgZ4R6V98/foqVlM2j5tBMR/uwJFQ2nBZX+" "\n"
+"CjQ7w7dwPsFQnRsC+smBQM8T6sdJKm35MAB435bdXBjFH7EMvs1QihYQgP8DviRm" "\n"
+"Rz8+UuLg+0lNN/H7dFRxJie3bThHr5JED6/dwE2qVeJ2kVArdfY2c8Ug0kck9FpX" "\n"
+"tSwDM6m/4shm+METPfdKfZNQcBhg9c9vqx1kfaXIS/ItUW2aCd/EJVOY3SRZyGpT" "\n"
+"tV5eZkPCMfsJGmjXkNjEZO4sHjoZfj/gtm+tN+Wf2cqR2S+8fimaGPFUeU71f0Ly" "\n"
+"TMDAl2WqlmjsXrS4MnKg6JWuCH2IB9fYHReyV90kiRTyzkZyuA++H1za0bBicefu" "\n"
+"2qZ/Lu70VGswSPmD7ug3EPWxBJO9ssBP91rRKo8AE/o=" "\n"
+"-----END CERTIFICATE-----";
+
+  std::string res = extract_common_name(cert);
+
+  printf("result: %s\n",res.c_str());
+
+  return 0;
+}

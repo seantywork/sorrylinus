@@ -130,8 +130,13 @@ void run_sock_client(std::string remote_addr) {
 }
 
 
-/*
-int main() {
+void run_sock_client_interactive(std::string remote_addr){
+
+  std::cout << "entering SOCK mode..." << std::endl;
+
+  std::cout << "with INTERACTIVE flag on..." << std::endl;
+
+  std::cout << "-----> TARGET ADDRESS: " << remote_addr << std::endl;
 
   bool done = false;
   std::string input;
@@ -149,7 +154,7 @@ int main() {
   set_open_handler(sock, &connection);
   set_message_handler(sock);
 
-  set_url(sock, "wss://localhost:3001/sock-client");
+  set_url(sock, remote_addr);
 
   websocketpp::lib::thread t1(&client::run, &sock);
 
@@ -175,6 +180,7 @@ int main() {
   }
 
   t1.join();
+
+
 }
 
-*/

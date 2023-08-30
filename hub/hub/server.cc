@@ -8,6 +8,37 @@
 
 #include "./path_handle.cc"
 
+void on_message_plain(server_plain* hub_plain, std::vector<connection_hdl>* connections,
+                connection_hdl hdl,
+                websocketpp::config::asio::message_type::ptr msg) {
+
+  server_plain::connection_ptr con = hub_plain->get_con_from_hdl(hdl);
+  std::string url_path = con->get_resource();
+
+
+  std::cout << "on_message_plain: " << msg->get_payload() << std::endl;
+
+  std::string talkback = msg->get_payload() + "really long words";
+
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+  talkback += "after words";
+
+  send_message_plain(hub_plain, &hdl, talkback);
+
+
+}
 
 void on_message(server* hub, std::vector<connection_hdl>* connections,
                 connection_hdl hdl,
@@ -52,6 +83,7 @@ void on_open(std::vector<connection_hdl>* connections, connection_hdl hdl) {
   std::cout << "connections: " << connections->size() << std::endl;
 }
 
+
 void on_close(server* hub, std::vector<connection_hdl>* connections,
               connection_hdl hdl) {
   std::cout << "on_close" << std::endl;
@@ -74,6 +106,11 @@ void set_message_handler(server& hub,
 void set_open_handler(server& hub, std::vector<connection_hdl>& connections) {
   hub.set_open_handler(websocketpp::lib::bind(&on_open, &connections, ::_1));
 }
+
+void set_open_handler_plain(server_plain& hub_plain, std::vector<connection_hdl>& connections) {
+  hub_plain.set_open_handler(websocketpp::lib::bind(&on_open, &connections, ::_1));
+}
+
 
 void set_close_handler(server& hub,
                        std::vector<connection_hdl>& connections) {
@@ -101,14 +138,48 @@ void set_tls_init_handler(server& hub) {
 }
 
 
-int main() {
+int main(int argc, char **argv) {
+
+  int INTERACTIVE_FLAG = 0;
+
+  for (int i =0; i < argc; i++){
+
+    if(strcmp(argv[i], "--interactive") == 0){
+      INTERACTIVE_FLAG = 1;
+    }
+
+  }
+
+  boost::asio::io_service io_serve;
+
+  server_plain hub_plain;
+
+
   server hub;
   std::vector<connection_hdl> connections;
 
   //turn_off_logging(hub);
 
 
-  hub.init_asio();
+  hub_plain.init_asio(&io_serve);
+  hub_plain.set_message_handler(
+        bind(&on_message_plain,&hub_plain, &connections,::_1,::_2));
+  set_open_handler_plain(hub_plain, connections);
+  std::string raw_ip_address_plain = "0.0.0.0";
+  unsigned short port_num_plain = 3000;
+
+
+  boost::system::error_code ec;
+
+  boost::asio::ip::address ip_address_plain = boost::asio::ip::address::from_string(raw_ip_address_plain, ec);
+
+  const boost::asio::ip::tcp::endpoint ep_plain(ip_address_plain,port_num_plain); 
+ 
+  hub_plain.listen(port_num_plain);
+  hub_plain.start_accept();
+
+
+  hub.init_asio(&io_serve);
 
   set_message_handler(hub, connections);
   set_tls_init_handler(hub);
@@ -121,8 +192,6 @@ int main() {
 
 
 
-  boost::system::error_code ec;
-
   boost::asio::ip::address ip_address = boost::asio::ip::address::from_string(raw_ip_address, ec);
 
   const boost::asio::ip::tcp::endpoint ep(ip_address,port_num);
@@ -131,35 +200,43 @@ int main() {
 
   hub.listen(ep);
   hub.start_accept();
-  hub.run();
+
+  if(INTERACTIVE_FLAG == 0){
+
+    io_serve.run();
+
+  }else{
+
+    websocketpp::lib::thread t1(&server::run, &hub);
+    websocketpp::lib::thread t2(&server_plain::run, &hub_plain);
+
+    std::string name;
+    std::string input;
+    bool done = false;
+    std::cout << "owner: ";
+    std::getline(std::cin, name);
+
+    while (!done) {
+      std::getline(std::cin, input);
+      if (input == "close") {
+        done = true;
+      } else if (input == "help") {
+        std::cout << "\nCommand List:\n"
+                  << "close\n"
+                  << "<message>\n"
+                  << "help: Display this help text\n"
+                  << std::endl;
+      } else {
+        std::string msg{name + ": " + input};
+
+        void* conn_addr =  VERIFIED_SOCK_CONNS[name];
+        connection_hdl* connection = &VERIFIED_ADDRCONN_MAPPER[conn_addr];
+        send_message(&hub, connection, msg);
+      }
+    }
+    t1.join();
+    t2.join();
+
+  }
 
 } 
-/*
-  websocketpp::lib::thread t1(&server::run, &hub);
-
-  std::string name;
-  std::string input;
-   bool done = false;
-  std::cout << "Name: ";
-  std::getline(std::cin, name);
-
-  while (!done) {
-    std::getline(std::cin, input);
-    if (input == "close") {
-      done = true;
-    } else if (input == "help") {
-      std::cout << "\nCommand List:\n"
-                << "close\n"
-                << "<message>\n"
-                << "help: Display this help text\n"
-                << std::endl;
-    } else {
-      std::string msg{name + ": " + input};
-      std::cout<< VERIFIED_SOCK_CONNS.size() << std::endl;
-      connection_hdl* connection = &VERIFIED_SOCK_CONNS[0];
-      send_message(&hub, connection, msg);
-    }
-  }
-  t1.join();
-}
-*/
