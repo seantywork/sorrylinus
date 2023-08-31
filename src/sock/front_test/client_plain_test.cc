@@ -33,7 +33,7 @@ void on_message(client* client, connection_hdl hdl,
 void on_open(client* sock, connection_hdl* connection ,connection_hdl hdl) {
   *connection = hdl;
 
-  std::string msg = "hello!!!!";
+  std::string msg = "N";
 
   sock->send(hdl, msg, websocketpp::frame::opcode::text);
 }
@@ -72,7 +72,7 @@ int main() {
 
   set_open_handler(sock, &connection);
   set_message_handler(sock);
-  std::string remote_addr = "ws://localhost:3000";
+  std::string remote_addr = "ws://localhost:3000/front-client/test";
   set_url(sock, remote_addr);
 
   websocketpp::lib::thread t1(&client::run, &sock);

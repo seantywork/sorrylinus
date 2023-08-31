@@ -7,11 +7,11 @@ services:
                 ports:
                         - "3306:3306"
 
-        frankthecloud:
-                build: ./frank
-                container_name: frankthecloud
-                ports:
-                        - "8000:8000"
-                depends_on:
-                        - frankdb
+        #frankthecloud:
+        #        build: ./frank
+        #        container_name: frankthecloud
+        #        ports:
+        #                - "8000:8000"
+        #        depends_on:
+        #                - frankdb
               

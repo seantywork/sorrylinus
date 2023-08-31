@@ -16,6 +16,11 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#ifndef SOCK_RESOURCE_SQL
+#define SOCK_RESOURCE_SQL
+#include "./sock_resource_sql.h"
+#endif
+
 using connection_hdl = websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -38,7 +43,9 @@ std::map<void*, std::string> VERIFIED_FRONT_CONNS_OWNER;
 
 std::map<void*, connection_hdl> VERIFIED_ADDRCONN_MAPPER;
 
+std::map<server*, server_plain*> SOCK_TO_FRONT;
 
+std::map<server_plain*, server*> FRONT_TO_SOCK;
 
 
 bool equal_connection_hdl(connection_hdl& a, connection_hdl& b) {
@@ -89,7 +96,7 @@ void unregister_verified_connections(connection_hdl& hdl){
     int t_fc = VERIFIED_FRONT_CONNS.size();
     int t_am = VERIFIED_ADDRCONN_MAPPER.size();
 
-    printf("registry: %d %d %d %d %d\n",t_sco, t_fco, t_sc, t_fc, t_am);
+    printf("registry previous: %d %d %d %d %d\n",t_sco, t_fco, t_sc, t_fc, t_am);
 
 
     VERIFIED_SOCK_CONNS_OWNER.erase(conn_addr);
@@ -104,7 +111,7 @@ void unregister_verified_connections(connection_hdl& hdl){
     t_fc = VERIFIED_FRONT_CONNS.size();
     t_am = VERIFIED_ADDRCONN_MAPPER.size();
 
-    printf("registry: %d %d %d %d %d\n",t_sco, t_fco, t_sc, t_fc, t_am);
+    printf("registry current: %d %d %d %d %d\n",t_sco, t_fco, t_sc, t_fc, t_am);
 
     return;
 
@@ -135,6 +142,30 @@ void remove_connection(server* hub, std::vector<connection_hdl>* connections,
 
   hub->close(hdl, websocketpp::close::status::normal, "done");
 
+
+  std::cout << "connection destroyed"  << std::endl;
+}
+
+void remove_connection_plain(server_plain* hub_plain, std::vector<connection_hdl>* connections,
+                       connection_hdl& hdl) {
+  auto equal_connection_hdl_predicate =
+      std::bind(&equal_connection_hdl, hdl, ::_1);
+
+  
+  connections->erase(
+      std::remove_if(std::begin(*connections), std::end(*connections),
+                     equal_connection_hdl_predicate),
+      std::end(*connections));
+
+
+  unregister_verified_connections(hdl);
+
+
+  std::cout << "connection evicted"  << std::endl;
+
+  std::cout << "check:" << hdl.lock().get()  << std::endl;
+
+  hub_plain->close(hdl, websocketpp::close::status::normal, "done");
 
   std::cout << "connection destroyed"  << std::endl;
 }
@@ -185,7 +216,7 @@ void register_verified_connections_sock(server* hub,
 
 }
 
-void register_verified_connections_front(server* hub,
+void register_verified_connections_front(server_plain* hub_plain,
                                    std::vector<connection_hdl>* connections,
                                    connection_hdl& hdl, 
                                    std::string owner){
@@ -195,7 +226,7 @@ void register_verified_connections_front(server* hub,
     if(VERIFIED_FRONT_CONNS_OWNER.find(conn_addr) != VERIFIED_FRONT_CONNS_OWNER.end()){
 
         std::cout << "existing front connection detected" << std::endl;
-        remove_connection(hub,connections, hdl);
+        remove_connection_plain(hub_plain,connections, hdl);
         std::cout << "existing front connection removed" << std::endl;
 
     }
@@ -215,6 +246,67 @@ void send_message(server* hub, connection_hdl* connection, std::string msg) {
 void send_message_plain(server_plain* hub_plain, connection_hdl* connection, std::string msg) {
   hub_plain->send(*connection, msg, websocketpp::frame::opcode::text);
 }
+
+void sock_to_front_handler(server* hub, connection_hdl* connection, std::string msg){
+
+    server_plain* counterpart = SOCK_TO_FRONT[hub];
+
+    void* conn_key = connection->lock().get();
+
+    if(VERIFIED_SOCK_CONNS_OWNER.find(conn_key) == VERIFIED_SOCK_CONNS_OWNER.end()){
+        send_message(hub, connection,"failed to send: owner key doesn't exist");
+        return;
+    }
+
+    std::string owner_key = VERIFIED_SOCK_CONNS_OWNER[conn_key];
+
+    if(VERIFIED_FRONT_CONNS.find(owner_key) == VERIFIED_FRONT_CONNS.end()){
+        send_message(hub, connection,"failed to send: no available counter part");
+        return;
+    }
+
+    void* counterpart_connaddr = VERIFIED_FRONT_CONNS[owner_key];
+
+    connection_hdl* counterpart_connection = &VERIFIED_ADDRCONN_MAPPER[counterpart_connaddr];
+
+    send_message_plain(counterpart, counterpart_connection, msg);
+
+    std::cout<< "on_massge: handler: sent: " << msg << std::endl;
+    
+    return;
+};
+
+void front_to_sock_handler(server_plain* hub_plain, connection_hdl* connection, std::string msg){
+
+    server* counterpart = FRONT_TO_SOCK[hub_plain];
+
+
+    void* conn_key = connection->lock().get();
+
+    if(VERIFIED_FRONT_CONNS_OWNER.find(conn_key) == VERIFIED_FRONT_CONNS_OWNER.end()){
+        send_message_plain(hub_plain, connection,"failed to send: owner key doesn't exist");
+        return;
+    }
+
+
+    std::string owner_key = VERIFIED_FRONT_CONNS_OWNER[conn_key];
+
+    if(VERIFIED_SOCK_CONNS.find(owner_key) == VERIFIED_SOCK_CONNS.end()){
+        send_message_plain(hub_plain, connection,"failed to send: no available counter part");
+        return;
+    }
+
+    void* counterpart_connaddr = VERIFIED_SOCK_CONNS[owner_key];
+
+    connection_hdl* counterpart_connection = &VERIFIED_ADDRCONN_MAPPER[counterpart_connaddr];
+
+    send_message(counterpart, counterpart_connection, msg);
+
+    std::cout<< "on_massge: handler: sent: " << msg << std::endl;
+
+    return;
+
+};
 
 std::string extract_common_name(const char* cert) {
 

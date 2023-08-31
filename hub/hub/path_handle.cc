@@ -35,7 +35,7 @@ void ph_sock_client(server* hub,
       return;
     }
 
-    std::cout << "on_message: " << msg->get_payload() << std::endl;  
+    sock_to_front_handler(hub, &hdl, msg->get_payload()); 
 
 
     return;
@@ -104,36 +104,15 @@ void ph_sock_client_test(server* hub,
 
 
     std::cout << "on_message:" << msg->get_payload() << std::endl;
+
+    sock_to_front_handler(hub, &hdl, msg->get_payload()); 
+
     return;
     
 }
 
 
-void ph_sock_client_plain_test(server* hub, 
-                         std::vector<connection_hdl>* connections,
-                         connection_hdl hdl,
-                         websocketpp::config::asio::message_type::ptr msg){
-
-    std::string send_back_payload;
- 
-
-    std::string test_words = "hello from the hub";
-
-    AWAIT = std::async(std::launch::async, async_callback_test, test_words);
-
-    std::cout << "waiting a few seconds..." << std::endl;
-
-    send_back_payload = AWAIT.get();
-
-    send_message(hub, &hdl, send_back_payload);
-
-
-    std::cout << "on_message:" << msg->get_payload() << std::endl;
-    return;
-    
-}
-
-void ph_front_client(server* hub, 
+void ph_front_client(server_plain* hub_plain, 
                      std::vector<connection_hdl>* connections,
                      connection_hdl hdl,
                      websocketpp::config::asio::message_type::ptr msg){
@@ -141,30 +120,34 @@ void ph_front_client(server* hub,
 
     std::string verification_status = check_if_verified_conn(&VERIFIED_FRONT_CONNS_OWNER, hdl);
     std::cout << "on_message: v_stat:" << verification_status << std::endl;
-    std::string result;
+    
+    DBResult<FrankRecord> result;
+    
     if (verification_status == "FAIL"){
 
-      result = authenticate_request(msg);
+      result = get_record_by_pkey(msg->get_payload());
       
-      if (result == "FAIL"){
+      if (result.status == "FAIL"){
         std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
-        remove_connection(hub, connections, hdl);
+        remove_connection_plain(hub_plain, connections, hdl);
     
       }else {
         std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
         
-        register_verified_connections_front(hub, connections, hdl, result);      
+        std::string email = result.results[0].email;
+
+        register_verified_connections_front(hub_plain, connections, hdl, email);      
       }  
 
       return;
     }
 
-    std::cout << "on_message: " << msg->get_payload() << std::endl;  
+    front_to_sock_handler(hub_plain, &hdl, msg->get_payload());  
 
     return;
 }
 
-void ph_front_client_test (server* hub, 
+void ph_front_client_test (server_plain* hub_plain, 
                            std::vector<connection_hdl>* connections,
                            connection_hdl hdl,
                            websocketpp::config::asio::message_type::ptr msg){
@@ -172,24 +155,29 @@ void ph_front_client_test (server* hub,
 
     std::string verification_status = check_if_verified_conn(&VERIFIED_FRONT_CONNS_OWNER, hdl);
     std::cout << "on_message: v_stat:" << verification_status << std::endl;
-    std::string result;
+    DBResult<FrankRecord> result;
+
+
     if (verification_status == "FAIL"){
 
-      result = authenticate_request(msg);
+      result = get_record_by_pkey(msg->get_payload());
       
-      if (result == "FAIL"){
+      if (result.status == "FAIL"){
         std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
-        remove_connection(hub, connections, hdl);
+        remove_connection_plain(hub_plain, connections, hdl);
     
       }else {
         std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
-        register_verified_connections_front(hub, connections, hdl, result);  
+        std::string email = result.results[0].email;
+        register_verified_connections_front(hub_plain, connections, hdl, email);  
       }  
 
       return;
     }
 
     std::cout << "on_message: " << msg->get_payload() << std::endl;  
+
+    front_to_sock_handler(hub_plain, &hdl, msg->get_payload());  
 
     return;
 }

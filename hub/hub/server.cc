@@ -15,27 +15,22 @@ void on_message_plain(server_plain* hub_plain, std::vector<connection_hdl>* conn
   server_plain::connection_ptr con = hub_plain->get_con_from_hdl(hdl);
   std::string url_path = con->get_resource();
 
+  if (url_path == "/front-client"){
 
-  std::cout << "on_message_plain: " << msg->get_payload() << std::endl;
+    ph_front_client(hub_plain, connections, hdl, msg);
 
-  std::string talkback = msg->get_payload() + "really long words";
+  } else if (url_path == "/front-client/test"){
 
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
-  talkback += "after words";
+    ph_front_client_test(hub_plain, connections, hdl, msg);
 
-  send_message_plain(hub_plain, &hdl, talkback);
+  } else {
+
+    std::cout << "illegal path: " << url_path << std::endl;  
+    remove_connection_plain(hub_plain, connections, hdl);
+    return;
+
+  }
+
 
 
 }
@@ -52,19 +47,11 @@ void on_message(server* hub, std::vector<connection_hdl>* connections,
 
     ph_sock_client(hub, connections, hdl, msg);
 
-  } else if (url_path == "/front-client"){
-
-    ph_front_client(hub, connections, hdl, msg);
-
   } else if (url_path == "/sock-client/test"){
     
     ph_sock_client_test(hub, connections, hdl, msg);
 
   
-  } else if (url_path == "/front-client/test"){
-
-    ph_front_client_test(hub, connections, hdl, msg);
-
   } else {
 
     std::cout << "illegal path: " << url_path << std::endl;  
@@ -200,6 +187,10 @@ int main(int argc, char **argv) {
 
   hub.listen(ep);
   hub.start_accept();
+
+  SOCK_TO_FRONT.insert({&hub, &hub_plain});
+
+  FRONT_TO_SOCK.insert({&hub_plain, &hub});
 
   if(INTERACTIVE_FLAG == 0){
 

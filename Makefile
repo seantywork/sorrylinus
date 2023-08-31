@@ -41,7 +41,14 @@ dep-uninstall:
 
 dep-install-lib:
 
+	sudo apt-get update
+
+	sudo apt-get -y install sqlite3 libsqlite3-dev
+
+	sudo apt-get -y install libmysqlcppconn-dev
+	
 	sudo apt-get install -y libboost-all-dev
+
 
 
 dep-install-solimod:

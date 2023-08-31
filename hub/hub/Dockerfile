@@ -1,1 +1,1 @@
-# g++ -pthread -o hub server.cc -lssl -lcrypto
+# g++ -pthread -o hub server.cc -lssl -lcrypto -lmysqlcppconn
