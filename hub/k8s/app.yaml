@@ -73,3 +73,53 @@ spec:
         image: seantywork/frankthecloud
         ports:
         - containerPort: 8000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: hub-front-3000
+spec:
+  type: NodePort
+  selector:
+    app: frankhub
+  ports:
+    - nodePort: 30010
+      port: 3000
+      targetPort: 3000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: hub-sock-3001
+spec:
+  type: NodePort
+  selector:
+    app: frankhub
+  ports:
+    - nodePort: 30011
+      port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frankhub
+spec:
+  selector:
+    matchLabels:
+      app: frankhub
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: frankhub
+    spec:
+      imagePullSecrets:
+      - name: docker-secret
+      containers:
+      - name: frankhub
+        imagePullPolicy: Always
+        image: seantywork/frankhub
+        ports:
+        - containerPort: 3000
+        - containerPort: 3001
