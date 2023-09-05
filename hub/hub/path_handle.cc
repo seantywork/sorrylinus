@@ -128,16 +128,35 @@ void ph_front_client(server_plain* hub_plain,
       result = get_record_by_pkey(msg->get_payload());
       
       if (result.status == "FAIL"){
-        std::cout << "auth failed: remove connection:" << hdl.lock().get() << std::endl;
+        std::cout << "auth failed: *: remove connection:" << hdl.lock().get() << std::endl;
         remove_connection_plain(hub_plain, connections, hdl);
-    
-      }else {
-        std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
-        
-        std::string email = result.results[0].email;
+        return;
+      }
 
-        register_verified_connections_front(hub_plain, connections, hdl, email);      
-      }  
+      std::string email = result.results[0].email;
+
+      std::string f_session = result.results[0].f_session;
+
+      std::string p_key = result.results[0].p_key;      
+
+
+      if (f_session == "N"){
+        std::cout << "auth failed: no session: remove connection:" << hdl.lock().get() << std::endl;
+        remove_connection_plain(hub_plain, connections, hdl);
+        return;        
+      }
+
+      if (p_key == "N"){
+        std::cout << "auth failed: no key: remove connection:" << hdl.lock().get() << std::endl;
+        remove_connection_plain(hub_plain, connections, hdl);
+        return;        
+      }
+
+
+      std::cout << "auth success: add verified connection:" << hdl.lock().get() << std::endl;
+
+      register_verified_connections_front(hub_plain, connections, hdl, email);      
+    
 
       return;
     }
