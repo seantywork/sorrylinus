@@ -1,5 +1,7 @@
 import mysql.connector  
 
+import secrets
+
 
 def DbExec(query, args):
 
@@ -45,9 +47,11 @@ def RegisterSessionByEmail(sid, email):
         return rec["DB_MSG"]
 
 
-    q = 'UPDATE his_onlyfriends SET f_session = %s WHERE email = %s'
+    req_key = secrets.token_hex(16)
 
-    a = [sid, email]
+    q = 'UPDATE his_onlyfriends SET f_session = %s, p_key = %s WHERE email = %s'
+
+    a = [sid, req_key, email]
 
     rec = DbExec(q,a)
 
@@ -78,3 +82,20 @@ def CheckSessionBySID(sid):
         return 1
     
     return 0
+
+def GetKeyBySID(sid):
+    
+    q = 'SELECT p_key FROM his_onlyfriends WHERE f_session = %s'
+
+    a = [sid]
+
+    rec = DbExec(q,a)
+
+    if len(rec["DATA"]) != 1 :
+
+        return ''
+    
+    p_key = rec["DATA"][0]["p_key"]
+
+    
+    return p_key

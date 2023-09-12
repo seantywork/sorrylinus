@@ -2,6 +2,7 @@
 //#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 #include <fstream>
+#include "../module/module.cc"
 
 
 //using client = websocketpp::client<websocketpp::config::asio_client>;

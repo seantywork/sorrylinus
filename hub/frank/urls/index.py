@@ -8,7 +8,7 @@ def Init(app):
     
     app.add_url_rule('/',methods=['GET'],view_func=views_index.Index)
     
-    app.add_url_rule('/healthcheck',methods=['GET'], view_func=views_index.HealthCheck)
+    app.add_url_rule('/test/frank-health',methods=['GET'], view_func=views_index.HealthCheck)
 
     app.add_url_rule('/authorize/pub',methods=['POST'], view_func=views_index.AuthorizePubKey)
 

@@ -3,8 +3,9 @@
 
 
 
-int soli_test_method(){
+char* soli_test_method(){
 
+    char* str_ptr;
     struct utsname uname_ptr;
     uname(&uname_ptr);
 
@@ -14,6 +15,7 @@ int soli_test_method(){
     printf("version     - %s \n", uname_ptr.version);
     printf("machine     - %s \n", uname_ptr.machine);
     
+
     return 0;  
 
 }

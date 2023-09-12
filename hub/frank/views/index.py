@@ -39,19 +39,25 @@ def Index():
 
     if not session.get('SID') :
 
-        return render_template('index.html', auth = auth)
+        return render_template('index.html', AUTH = auth)
     
 
     sid = session.get('SID')
 
     if not SessionAuth(sid) :
 
-        return render_template('index.html', auth = auth)
+        return render_template('index.html', AUTH = auth)
 
+
+    req_key = models_index.GetKeyBySID(sid)
+
+    if req_key == '':
+
+        return render_template('index.html', AUTH = auth)
 
     auth = 1
 
-    return render_template('index.html', auth = auth)
+    return render_template('index.html', AUTH = auth, REQ_KEY = req_key)
 
 
 def AuthorizePubKey():
