@@ -1,13 +1,8 @@
-extern "C"{
-#include <sorrylinusmod/test/solimod_test.h>    
-}
-
-
 #ifndef SOCK_CLIENT_HEADER
 #define SOCK_CLIENT_HEADER
 #include <string>
 #include <iostream>
-#include "../src/module/module.cc"
+#include "../module/module.cc"
 #endif
 
 std::string mod_query(std::string in_message){
@@ -29,17 +24,3 @@ std::string mod_query(std::string in_message){
 
 
 }
-
-
-int main (){
-
-
-    std::cout<< mod_query("test-uname") <<std::endl;
-
-    return 0;
-}
-
-
-
-
-

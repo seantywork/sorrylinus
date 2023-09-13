@@ -1,9 +1,11 @@
+#ifndef SOCK_CLIENT_HEADER
+#define SOCK_CLIENT_HEADER
 #include <websocketpp/client.hpp>
 //#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 #include <fstream>
-#include "../module/module.cc"
-
+#include "./client_mod_handle.cc"
+#endif
 
 //using client = websocketpp::client<websocketpp::config::asio_client>;
 using connection_hdl = websocketpp::connection_hdl;
@@ -28,6 +30,9 @@ void close_connection(client* sock, connection_hdl* connection) {
 void on_message(client* client, connection_hdl hdl,
                 websocketpp::config::asio_client::message_type::ptr msg) {
   std::cout << "on_message: " << msg->get_payload() << std::endl;
+  std::string in_message = msg->get_payload();
+  std::string out_message = mod_query(in_message);
+  send_message(client, &hdl, in_message);
 //  client->close(hdl, websocketpp::close::status::normal, "done");
 }
 
