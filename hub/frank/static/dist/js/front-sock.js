@@ -32,7 +32,7 @@ function FrontSockInit(){
 
         var urlbody_port = urlbody.split(':')
 
-        urlbody = urlbody_port[0] + ':' + '3000'
+        urlbody = urlbody_port[0] 
 
     }
 
