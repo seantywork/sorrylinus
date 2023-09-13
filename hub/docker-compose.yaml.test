@@ -11,7 +11,7 @@ services:
                 image: seantywork/frankthecloud
                 container_name: frankthecloud
                 ports:
-                        - "8000:8000"
+                        - "8888:8000"
                 depends_on:
                         - frankdb
 
