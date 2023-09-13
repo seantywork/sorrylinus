@@ -2,13 +2,13 @@ version: "3"
 
 services:
         frankdb:
-                build: ./mysql
+                image: seantywork/frankdb
                 container_name: frankdb
                 ports:
                         - "3306:3306"
 
         frankthecloud:
-                build: ./frank
+                image: seantywork/frankthecloud
                 container_name: frankthecloud
                 ports:
                         - "8000:8000"
@@ -16,7 +16,7 @@ services:
                         - frankdb
 
         frankhub:
-                build: ./hub
+                image: seantywork/frankhub
                 container_name: frankhub
                 ports:
                         - "3000:3000"
