@@ -9,7 +9,8 @@ char* soli_test_uname(){
     struct utsname uname_ptr;
     uname(&uname_ptr);
 
-    char* str_ptr = (char*)malloc(500);
+    char* str_ptr = (char*)malloc(sizeof(char)*500);
+    memset(str_ptr,'\0',sizeof(char)*500);
     strcat(str_ptr,"system name - ");
     strcat(str_ptr,uname_ptr.sysname);
     strcat(str_ptr,"\n");

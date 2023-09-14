@@ -14,6 +14,14 @@ the most useful software on earth
 
 [feebdaed.xyz](https://feebdaed.xyz)
 
+run option for public access is: src/soliapp --sock --feeb
+
+Example:
+
+resulting output of 'test-uname' flag 
+
+[result](docs/result-test-uname)
+
 ## How to use it
 
 1. 

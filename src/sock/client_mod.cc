@@ -2,8 +2,9 @@
 #define SOCK_CLIENT_HEADER
 #include <string>
 #include <iostream>
-#include "../module/module.cc"
 #endif
+
+#include "../module/module.cc"
 
 std::string mod_query(std::string in_message){
 

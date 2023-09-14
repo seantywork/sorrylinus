@@ -3,6 +3,10 @@
 *.csr
 *.pem
 *.srl
+*.o
+*.so
+testsoli
+soliapp
 VENV
 .env
 flask_session

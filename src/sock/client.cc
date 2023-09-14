@@ -4,7 +4,7 @@
 //#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 #include <fstream>
-#include "./client_mod_handle.cc"
+#include "./client_mod.cc"
 #endif
 
 //using client = websocketpp::client<websocketpp::config::asio_client>;
@@ -32,7 +32,7 @@ void on_message(client* client, connection_hdl hdl,
   std::cout << "on_message: " << msg->get_payload() << std::endl;
   std::string in_message = msg->get_payload();
   std::string out_message = mod_query(in_message);
-  send_message(client, &hdl, in_message);
+  send_message(client, &hdl, out_message);
 //  client->close(hdl, websocketpp::close::status::normal, "done");
 }
 

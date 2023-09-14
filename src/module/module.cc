@@ -12,7 +12,16 @@ extern "C"{
 
 std::string mod_soli_test_uname(){
 
-    return soli_test_uname();
+    char* ret_ptr = soli_test_uname();
+
+    std::string ret_str = ret_ptr;
+
+    free(ret_ptr);
+
+    std::cout << ret_str;
+
+    return ret_str;
+
 }
 
 
