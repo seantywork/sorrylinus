@@ -10,6 +10,7 @@ the most useful software on earth
 **Disclaimer : I am not liable for any misuse of this code**
 **Only use it on machines and in environments that you have explicit permissions and authrizations to do so**
 
+# sorrylinus hub mode
 ## Public access point for controlling sorrylinus socket client
 
 [feebdaed.xyz](https://feebdaed.xyz)
@@ -22,7 +23,8 @@ resulting output of 'test-uname' flag
 
 ![result](docs/result-test-uname.png)
 
-## How to use it
+# sorrylinus ap mode
+## How to use it 
 
 1. 
 #### Get Raspberri Pi, which is primarily-intended platform of my choice, with Ubunt 20.04 for Raspberry Pi 
