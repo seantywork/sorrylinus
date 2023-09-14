@@ -8,6 +8,26 @@ spec:
   - host: "feebdaed.xyz"
     http:
       paths:
+        - path: /front-client
+          pathType: Prefix
+          backend:
+            service:
+              name: frankhub-front
+              port:
+                number: 3000
+  - host: "www.feebdaed.xyz"
+    http:
+      paths:
+        - path: /front-client
+          pathType: Prefix
+          backend:
+            service:
+              name: frankhub-front
+              port:
+                number: 3000
+  - host: "feebdaed.xyz"
+    http:
+      paths:
         - path: /
           pathType: Prefix
           backend:
