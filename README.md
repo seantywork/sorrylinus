@@ -20,7 +20,7 @@ Example:
 
 resulting output of 'test-uname' flag 
 
-[result](docs/result-test-uname)
+![result](docs/result-test-uname.png)
 
 ## How to use it
 
