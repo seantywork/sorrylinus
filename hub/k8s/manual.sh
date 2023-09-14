@@ -11,3 +11,5 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 kubectl -n frank apply -f ./app.yaml
 
 kubectl -n frank apply -f ./ingress.yaml
+
+kubectl -n frank apply -f ./ingress-front.yaml
