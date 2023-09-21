@@ -27,10 +27,12 @@ dep-install:
 	cp -R include/httplib ${USR_LOCAL_INCLUDE_PREFIX}/
 	cp -R include/jsonlib ${USR_LOCAL_INCLUDE_PREFIX}/
 	cp -R include/websocketpp ${USR_LOCAL_INCLUDE_PREFIX}/
+#	cp -R include/googleapis ${USR_LOCAL_INCLUDE_PREFIX}/
 
 	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/httplib
 	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/jsonlib
 	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/websocketpp
+#	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/googleapis
 
 
 dep-uninstall:
@@ -38,6 +40,7 @@ dep-uninstall:
 	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/httplib
 	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/jsonlib
 	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/websocketpp
+#	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/googleapis
 
 dep-install-lib:
 
@@ -48,7 +51,6 @@ dep-install-lib:
 	sudo apt-get -y install libmysqlcppconn-dev
 	
 	sudo apt-get install -y libboost-all-dev
-
 
 
 dep-install-solimod:
