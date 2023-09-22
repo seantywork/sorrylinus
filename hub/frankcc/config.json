@@ -1,0 +1,6 @@
+{
+    "VIEW_ROOT": "./templates/",
+    "PUBLIC_ROOT":"./static/",
+    "ADDRESS":"0.0.0.0",
+    "PORT":8000
+}

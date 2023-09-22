@@ -212,6 +212,20 @@ struct rest_client {
             }
         }
 
+        /*
+
+        std::string build_confirm_permissions_request() {
+            std::ostringstream os;
+            os << "code="           << GET_PROPERTY(cfg_, "code")             << '&'
+               << "client_id="      << GET_PROPERTY(cfg_, "client_id")        << '&'
+               << "client_secret="  << GET_PROPERTY(cfg_, "client_secret")    << '&'
+               << "redirect_uri=http://localhost:8000/oauth2/google/callback" << '&'           
+               << "grant_type=authorization_code";
+            return os.str();
+        }
+
+        */
+
         std::string build_confirm_permissions_request() {
             std::ostringstream os;
             os << "code="           << GET_PROPERTY(cfg_, "code")             << '&'
