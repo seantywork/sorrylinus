@@ -16,6 +16,8 @@ mkdir -p ccwslib
 
 mkdir -p json
 
+mkdir -p websdk
+
 git -C ./cchttplib init
 
 git -C ./ccwslib init
@@ -28,17 +30,21 @@ git -C ./ccwslib pull https://github.com/seantywork/websocketpp.git master
 
 git -C ./json pull https://github.com/seantywork/json.git develop
 
+
 /bin/cp -rf ./cchttplib/httplib.h ../include/httplib/httplib.h
 
 /bin/cp -rf ./ccwslib/websocketpp/* ../include/websocketpp
 
 /bin/cp -rf ./json/single_include/nlohmann/* ../include/jsonlib
 
+
 sudo rm -r ./cchttplib
 
 sudo rm -r ./ccwslib
 
 sudo rm -r ./json
+
+
 
 echo "Successfully updated"
 

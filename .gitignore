@@ -11,3 +11,4 @@ VENV
 .env
 flask_session
 __pycache__
+rc.properties
