@@ -3,7 +3,7 @@
     "PUBLIC_ROOT":"./static/",
     "ADDRESS":"0.0.0.0",
     "PORT":8000,
-    "DEBUG_MODE":"TRUE",
+    "DEBUG_MODE":"FALSE",
     "LOCAL_URL":"http://localhost:8000",
     "REMOTE_URL":"https://feebdaed.xyz"
 }

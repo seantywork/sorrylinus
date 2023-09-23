@@ -15,11 +15,15 @@ the most useful software on earth
 
 [feebdaed.xyz](https://feebdaed.xyz)
 
-run option for public access is: src/soliapp --sock --feeb
+Now every component is written in either C or C++
 
-Example:
+run option for public access is: 
 
-resulting output of 'test-uname' flag 
+```bash
+    cd src && soliapp --sock --feeb
+```
+
+below is the resulting output of 'test-uname' flag 
 
 ![result](docs/result-test-uname.png)
 
