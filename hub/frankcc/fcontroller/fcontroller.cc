@@ -6,6 +6,7 @@
 
 
 #include <time.h>
+#include <curl/curl.h>
 #include "../fmodels/fmodels.h"
 
 using namespace httplib;
@@ -15,7 +16,24 @@ using json = nlohmann::json;
 std::ifstream ctrl_f("./config.json");
 json ctrl_config_data = json::parse(ctrl_f);
 
+std::ifstream ctrl_o("./ogapi.json");
+json ctrl_oauth_data = json::parse(ctrl_o);
+
+std::string DEBUG_MODE = ctrl_config_data["DEBUG_MODE"];
 std::string VIEW_ROOT = ctrl_config_data["VIEW_ROOT"];
+std::string LOCAL_URL = ctrl_config_data["LOCAL_URL"];
+std::string REMOTE_URL = ctrl_config_data["REMOTE_URL"];
+
+std::string GOOGLE_CLIENT_ID = ctrl_oauth_data["web"]["client_id"];
+std::string GOOGLE_CLIENT_SECRET = ctrl_oauth_data["web"]["client_secret"];
+std::string GOOGLE_AUTH_ENDPOINT = ctrl_oauth_data["web"]["auth_uri"];
+std::string GOOGLE_TOKEN_ENDPOINT = ctrl_oauth_data["web"]["token_uri"];
+std::string OAUTH_REDIRECT_URI = "";
+
+
+std::string USER_INFO_API = "https://www.googleapis.com/oauth2/v2/userinfo?access_token=";
+
+
 
 std::string hex_gen(int key_size) {
 
@@ -154,6 +172,81 @@ std::string getSessionStatus(const Request &req){
     return sess_stat;
 }
 
+
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+std::string RequestPostCode(std::string req_url, std::string code){
+
+    //const char* c_req_url = req_url.c_str();
+
+    CURL *curl;
+    CURLcode res;
+
+    std::string post_fields = "";
+    std::string redirect_uri = "";
+    std::string readBuffer;
+
+
+    post_fields += "code=" + code + "&";
+    post_fields += "client_id=" + GOOGLE_CLIENT_ID + "&";
+    post_fields += "client_secret=" + GOOGLE_CLIENT_SECRET + "&";
+    post_fields += "redirect_uri=" + OAUTH_REDIRECT_URI + "&";
+    post_fields += "grant_type=authorization_code";
+
+    curl = curl_easy_init();
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,post_fields.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK){
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
+        }
+        curl_easy_cleanup(curl);
+
+    } else {
+        readBuffer = "curl init failed";
+    }
+
+
+    return readBuffer;
+}
+
+std::string RequestGetUrl(std::string req_url){
+
+    //const char* c_req_url = req_url.c_str();
+
+    CURL *curl;
+    CURLcode res;
+
+    std::string readBuffer;
+
+    curl = curl_easy_init();
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK){
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
+        }
+        curl_easy_cleanup(curl);
+
+    } else {
+        readBuffer = "curl init failed";
+    }
+
+
+    return readBuffer;
+}
+
+
+
 class Controller {
 
 public:
@@ -165,11 +258,11 @@ public:
 
         int auth = 0;
 
+        std::string req_key = "";
+
         if (sid != "N"){
 
             DBResult<FrankRecord> q_res = get_record_by_fsession(sid);
-
-            std::string req_key = "";
 
             if (q_res.status == "SUCCESS"){
 
@@ -177,7 +270,10 @@ public:
 
                 auth = 1;
             }
-        } 
+        } else {
+            std::string sid = hex_gen(32);
+            setSessionStatus(res,"SID",sid);
+        }
 
         std::string index_path = VIEW_ROOT;
 
@@ -192,7 +288,7 @@ public:
         }
 
         std::string content = getFileContent(index_path);
-        template_replace(content, "{{%.REQ_KEY%}}",sid);
+        template_replace(content, "{{%.REQ_KEY%}}",req_key);
         std::string type = "text/html";
 
 
@@ -206,14 +302,88 @@ public:
 
     static void TestFrankHealth(const Request &req, Response &res){
 
+
+
     }
 
     static void GoogleOAuthLogin(const Request &req, Response &res){
 
+        std::string request_uri = "";
+
+        if(DEBUG_MODE == "TRUE"){
+            OAUTH_REDIRECT_URI = ctrl_oauth_data["web"]["redirect_uris"][0];
+        }else{
+            OAUTH_REDIRECT_URI = ctrl_oauth_data["web"]["redirect_uris"][1];
+        }
+
+        request_uri += GOOGLE_AUTH_ENDPOINT + "?";
+        request_uri += "client_id=" + GOOGLE_CLIENT_ID + "&";
+        request_uri += "redirect_uri=" + OAUTH_REDIRECT_URI + "&";
+        request_uri += "scope=https://www.googleapis.com/auth/userinfo.email&";
+        request_uri += "response_type=code";
+
+        res.set_redirect(request_uri);
+
+        logCurrentTime("[ /oauth login ]");
     }
 
     static void GoogleOAuthCallback(const Request &req, Response &res){
 
+        std::string sid = getSessionStatus(req);
+
+        if (sid == "N"){
+            res.set_redirect("/");
+        }
+
+        try{
+
+            std::string code_string = req.get_param_value("code");
+
+            std::string content = RequestPostCode(GOOGLE_TOKEN_ENDPOINT,code_string);
+            
+            json OADATA = json::parse(content);
+
+            std::string access_token = OADATA["access_token"];
+
+            std::string get_userinfo = USER_INFO_API + access_token;
+
+            std::string result = RequestGetUrl(get_userinfo);
+
+            json UIDATA = json::parse(result);
+
+            std::string email = UIDATA["email"];
+
+            std::cout << email << std::endl;
+
+            std::string pkey = hex_gen(32);
+
+            DBResult<FrankRecord> q_res = set_record_by_email(email, sid, pkey);
+
+            if (q_res.status == "SUCCESS"){
+
+                res.set_redirect("/");
+
+
+            } else{
+
+                std::cout << q_res.status << std::endl;
+
+                res.set_content("failed setting record","text/plain");
+
+            }
+
+
+        } catch(...){
+            
+            std::cout << "error callback" << std::endl;
+
+            res.set_redirect("/");
+
+            return;
+        }
+
+
+        logCurrentTime("[ /oauth callback ]");
     }
 
 /*

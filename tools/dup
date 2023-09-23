@@ -16,8 +16,6 @@ mkdir -p ccwslib
 
 mkdir -p json
 
-mkdir -p websdk
-
 git -C ./cchttplib init
 
 git -C ./ccwslib init

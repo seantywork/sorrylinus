@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <iomanip>
 
+#include <curl/curl.h>
 
 
 std::string hex_gen(int key_size) {
@@ -57,12 +58,41 @@ std::vector<std::string> cookie_split(std::string line, std::string delimiter){
 
 }
 
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+std::string curl_request_post_code(){
+
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+
+    curl = curl_easy_init();
+    if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, "http://www.google.com");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    }
+
+
+    return readBuffer;
+}
+
 
 int main() {
 
     // std::cout << hex_gen(32) << std::endl;
 
-    std::vector<std::string> vs = cookie_split("test-shit","=");
+    //std::vector<std::string> vs = cookie_split("test-shit","=");
+
+    std::cout << curl_request_post_code() << std::endl;
+
     
     return 0;
 }

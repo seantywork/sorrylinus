@@ -11,16 +11,16 @@ services:
                 image: seantywork/frankthecloud
                 container_name: frankthecloud
                 ports:
-                        - "8888:8000"
+                        - "8000:8000"
                 depends_on:
                         - frankdb
 
-        frankhub:
-                image: seantywork/frankhub
-                container_name: frankhub
-                ports:
-                        - "3010:3000"
-                        - "3011:3001"
-                depends_on:
-                        - frankdb
+#        frankhub:
+#                image: seantywork/frankhub
+#                container_name: frankhub
+#                ports:
+#                        - "3010:3000"
+#                        - "3011:3001"
+#                depends_on:
+#                        - frankdb
               

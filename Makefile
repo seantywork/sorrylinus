@@ -55,11 +55,11 @@ dep-install-lib:
 	
 	sudo apt-get install -y libcurl4-openssl-dev
 
-	git clone https://github.com/mrtazz/restclient-cpp.git
+#	git clone https://github.com/mrtazz/restclient-cpp.git
 
-	cd restclient-cpp && ./autogen.sh && ./configure && make install
+#	cd restclient-cpp && ./autogen.sh && ./configure && make install
 
-	rm -r restclient-cpp
+#	rm -r restclient-cpp
 
 
 dep-install-solimod:

@@ -4,9 +4,6 @@
 #include <jsonlib/json.hpp>
 #endif
 
-
-// https://accounts.google.com/o/oauth2/v2/auth?client_id=501727986596-j7sv6uclajq5k1rlb75lsdu4dcisd2j9.apps.googleusercontent.com&redirect_uri=http://localhost:8000/oauth2/google/callback&scope=https://www.googleapis.com/auth/userinfo.email&response_type=code
-
 #include "./frouter/frouter.cc"
 
 
