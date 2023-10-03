@@ -1,7 +1,7 @@
 {
     "VIEW_ROOT": "./view/",
     "PUBLIC_ROOT":"./public/",
-    "ADDRESS":"0.0.0.0",
+    "ADDRESS":"192.168.4.1",
     "PORT":8080,
     "SOCK_LOCAL_ADDR":"localhost:3001/sock-client",
     "SOCK_FEEB_ADDR":"feebdaed.xyz:3001/sock-client"
