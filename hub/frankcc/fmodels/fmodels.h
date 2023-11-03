@@ -179,5 +179,53 @@ DBResult<FrankRecord> set_record_by_email(std::string user_email, std::string fs
     return db_res;
 }
 
+DBResult<FrankRecord> unset_record_by_email(std::string user_email){
+
+    std::cout << "sql unset record" << std::endl;
+
+    DBResult<FrankRecord> db_res;
+
+    FrankRecord fr;
+
+
+    try {
+        sql::Driver *driver;
+        sql::Connection *con;
+        sql::PreparedStatement *prep_stmt;
+        sql::ResultSet *res;
+
+        driver = get_driver_instance();
+        con = driver->connect(DB_ADDRESS, "seantywork", "letsshareitwiththewholeuniverse");
+
+        con->setSchema("frank");
+
+        prep_stmt = con->prepareStatement("UPDATE his_onlyfriends SET f_session = 'N', p_key = 'N' WHERE email = ?");
+
+        prep_stmt->setString(1, user_email);
+
+        prep_stmt->execute();
+
+        res = prep_stmt->getResultSet();
+
+        db_res.status = "SUCCESS"; 
+
+        delete res;
+        delete prep_stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        std::cout << "# ERR: SQLException in " << __FILE__;
+        std::cout << "(" << __FUNCTION__ << ") on line "  << __LINE__ << std::endl;
+        std::cout << "# ERR: " << e.what();
+        std::cout << " (MySQL error code: " << e.getErrorCode();
+        std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
+    }
+
+
+
+    return db_res;
+}
+
+
 
 #endif

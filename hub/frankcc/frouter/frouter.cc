@@ -50,6 +50,8 @@ public:
 
         srv->Get("/oauth2/google/callback", ctrl.GoogleOAuthCallback);
 
+        srv->Post("/signout", ctrl.SignOut);
+
     }
 
 

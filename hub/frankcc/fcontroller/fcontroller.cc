@@ -64,7 +64,7 @@ public:
 
     static void TestFrankHealth(const Request &req, Response &res){
 
-        std::string ret = "{}";
+        std::string ret = "{\"message\":\"NotFine\"}";
 
         std::string sid = get_session_status(req);
 
@@ -87,7 +87,7 @@ public:
 
         } else {
 
-            ret = "{\"health\":\"fine\"}";
+            ret = "{\"message\":\"Fine\"}";
 
             res.set_content(ret,"application/json");
 
@@ -175,6 +175,47 @@ public:
 
 
         log_current_time("[ /oauth callback ]");
+    }
+
+    static void SignOut(const Request &req, Response &res){
+
+
+        std::string ret = "{\"message\":\"FAIL\"}";
+
+        std::string sid = get_session_status(req);
+
+        int auth = 0;
+
+        DBResult<FrankRecord> q_res;
+
+        if (sid != "N"){
+
+            q_res = get_record_by_fsession(sid);
+
+            if (q_res.status == "SUCCESS"){
+
+                auth = 1;
+            }
+        }
+
+
+        if (auth != 1){
+
+            res.set_content(ret,"application/json");
+
+        } else {
+
+            DBResult<FrankRecord> q_res_unset = unset_record_by_email(q_res.results[0].email);            
+
+            ret = "{\"message\":\""+ q_res_unset.status +"\"}";
+
+            res.set_content(ret,"application/json");
+
+        }
+
+        log_current_time("[ /frank signout ]");
+
+
     }
 
 };

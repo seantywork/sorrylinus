@@ -10,9 +10,33 @@ async function FrankHealth(){
     
     var resp_data = resp.data
 
-    message = resp_data['health']
+    message = resp_data['message']
 
     RenderOutput('frank-health',message)
+
+}
+
+
+async function SignOut(){
+
+
+    var resp = await axios.post('/signout')
+
+    var resp_data = resp.data
+
+    message = resp_data['message']
+
+    if(message != 'SUCCESS'){
+      alert('sign out failed')
+    } else {
+
+      alert('sign out success')
+
+      location.href = '/'
+
+    }
+
+
 
 }
 
