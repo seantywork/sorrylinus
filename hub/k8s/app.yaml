@@ -47,7 +47,7 @@ spec:
       containers:
         - name: frankdb
           imagePullPolicy: Always
-          image: seantywork/frankdb
+          image: registry.gitlab.com/seantywork/frankdb
           ports:
           - containerPort: 3306
 ---
@@ -70,7 +70,7 @@ spec:
       containers:
       - name: frankthecloud
         imagePullPolicy: Always
-        image: seantywork/frankthecloud
+        image: registry.gitlab.com/seantywork/frankthecloud
         ports:
         - containerPort: 8000
 ---
@@ -121,7 +121,7 @@ spec:
       containers:
       - name: frankhub
         imagePullPolicy: Always
-        image: seantywork/frankhub
+        image: registry.gitlab.com/seantywork/frankhub
         ports:
         - containerPort: 3000
         - containerPort: 3001
