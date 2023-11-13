@@ -96,9 +96,9 @@ clean: src/soliapp
 
 mod-build: lib/sorrylinusmod/mod/solimod.c
 
-	gcc -c -Wall -o solimod.o -fpic lib/sorrylinusmod/mod/solimod.c
+	g++ -c -Wall -o solimod.o -fpic lib/sorrylinusmod/mod/solimod.c
 
-	gcc -shared -o libsolimod.so solimod.o
+	g++ -shared -o libsolimod.so solimod.o
 
 mod-clean: solimod.o libsolimod.so
 
@@ -126,9 +126,9 @@ test-clean: test/testsoli
 
 test-mod-build: lib/sorrylinusmod/test/solimod_test.c
 
-	gcc -c -Wall -o solimod_test.o -fpic lib/sorrylinusmod/test/solimod_test.c
+	g++ -c -Wall -o solimod_test.o -fpic lib/sorrylinusmod/test/solimod_test.c
 
-	gcc -shared -o libsolimod_test.so solimod_test.o
+	g++ -shared -o libsolimod_test.so solimod_test.o
 
 test-mod-clean: solimod_test.o libsolimod_test.so
 	

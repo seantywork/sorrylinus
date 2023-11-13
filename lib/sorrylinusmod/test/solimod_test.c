@@ -11,7 +11,7 @@ std::string soli_test_uname(){
 
     std::string str_ptr = "";
 
-    str_ptr += "****\n"
+    str_ptr += "****\n";
 
     str_ptr += "system name - ";
     std::string sysname = uname_ptr.sysname;
@@ -33,7 +33,7 @@ std::string soli_test_uname(){
     std::string machine = uname_ptr.machine;
     str_ptr += machine + "\n";
 
-    str_ptr += "****\n"
+    str_ptr += "****\n";
 
 
     return str_ptr;  
