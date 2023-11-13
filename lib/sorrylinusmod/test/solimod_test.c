@@ -3,29 +3,37 @@
 
 
 
-char* soli_test_uname(){
+std::string soli_test_uname(){
 
 
     struct utsname uname_ptr;
     uname(&uname_ptr);
 
-    char* str_ptr = (char*)malloc(sizeof(char)*500);
-    memset(str_ptr,'\0',sizeof(char)*500);
-    strcat(str_ptr,"system name - ");
-    strcat(str_ptr,uname_ptr.sysname);
-    strcat(str_ptr,"\n");
-    strcat(str_ptr,"node name   - ");
-    strcat(str_ptr,uname_ptr.nodename);
-    strcat(str_ptr,"\n");
-    strcat(str_ptr,"release     - ");
-    strcat(str_ptr,uname_ptr.release);
-    strcat(str_ptr,"\n");
-    strcat(str_ptr,"version     - ");
-    strcat(str_ptr,uname_ptr.version);
-    strcat(str_ptr,"\n");
-    strcat(str_ptr,"machine     - ");
-    strcat(str_ptr,uname_ptr.machine);
-    strcat(str_ptr,"\n"); 
+    std::string str_ptr = "";
+
+    str_ptr += "****\n"
+
+    str_ptr += "system name - ";
+    std::string sysname = uname_ptr.sysname;
+    str_ptr += sysname + "\n";
+
+    str_ptr += "node name - ";
+    std::string nodename = uname_ptr.nodename;
+    str_ptr += nodename + "\n";
+
+    str_ptr += "release - ";
+    std::string release = uname_ptr.release;
+    str_ptr += release + "\n";
+    
+    str_ptr += "version - ";
+    std::string version = uname_ptr.version;
+    str_ptr += version + "\n";
+
+    str_ptr += "machine - ";
+    std::string machine = uname_ptr.machine;
+    str_ptr += machine + "\n";
+
+    str_ptr += "****\n"
 
 
     return str_ptr;  
