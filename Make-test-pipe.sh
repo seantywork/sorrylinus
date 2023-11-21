@@ -2,4 +2,5 @@
 
 make test-mod-build
 sudo make test-mod-link
-make test-build
+make build-test
+# make test-build
