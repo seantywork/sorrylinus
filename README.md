@@ -15,7 +15,7 @@ the most useful software on earth
 
 [feebdaed.xyz](https://feebdaed.xyz)
 
-Now every component is written in either C or C++
+Now every component is written in C++
 
 run option for public access is: 
 
@@ -24,6 +24,8 @@ run option for public access is:
 ```
 
 below is the resulting output of 'test-uname' flag 
+
+tested on arm64
 
 ![result](docs/result-test-uname.png)
 
