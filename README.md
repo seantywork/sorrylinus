@@ -35,7 +35,7 @@ below is the raspberry pi 4 side ir transreceiver setting
 
 successful test has been recorded and published
 
-![ir-success](https://youtube.com/shorts/hcPera-hTdc?feature=share)
+[ir-success](https://youtube.com/shorts/hcPera-hTdc?feature=share)
 
 # sorrylinus ap mode
 ## How to use it 
