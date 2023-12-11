@@ -101,11 +101,11 @@ NODENAME="$(hostname -s)"
 NODENAME="ctrlwk-$NODENAME-$IP_NO_DOT-$(openssl rand -hex 8)"
 POD_CIDR="10.10.0.0/16"
 
-sudo kubeadm config images pull 
+sudo kubeadm config images pull --cri-socket=unix://var/run/crio/crio.sock 
 
 echo "Preflight Check Passed: Downloaded All Required Images"
 
-sudo kubeadm init --apiserver-advertise-address=$MASTER_IP --apiserver-cert-extra-sans="$MASTER_IP,$LB_IP" --pod-network-cidr=$POD_CIDR --node-name "$NODENAME" --control-plane-endpoint "$LB_IP:$PORT" --ignore-preflight-errors Swap --cri-socket=unix://var/run/crio/crio.sock 
+sudo kubeadm init --apiserver-advertise-address=$MASTER_IP --apiserver-cert-extra-sans="$MASTER_IP,$LB_IP" --pod-network-cidr=$POD_CIDR --node-name "$NODENAME" --control-plane-endpoint "$LB_IP:$PORT" --ignore-preflight-errors Swap 
 mkdir -p "$HOME"/.kube
 sudo cp -i /etc/kubernetes/admin.conf "$HOME"/.kube/config
 sudo chown "$(id -u)":"$(id -g)" "$HOME"/.kube/config
