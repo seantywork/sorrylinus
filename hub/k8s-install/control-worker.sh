@@ -122,4 +122,4 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 
 kubectl label node $NODENAME ingress-ready=true 
 
-kubectl taint nodes --all node-role.kubernetes.io/master- 
+kubectl taint node $NODENAME node-role.kubernetes.io/control-plane:NoSchedule-
