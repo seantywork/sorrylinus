@@ -9,6 +9,11 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "15552000"
 
 spec:
+  tls:
+  - hosts:
+    - "feebdaed.xyz"
+    - "www.feebdaed.xyz"
+    secretName: frank-tls-secret
   rules:
   - host: "feebdaed.xyz"
     http:
