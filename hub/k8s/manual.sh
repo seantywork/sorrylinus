@@ -1,6 +1,5 @@
 #!/bin/bash
 
-kind create cluster --name kindcluster --config ./kindcluster.yaml --image=kindest/node:v1.27.2
 
 kubectl create namespace frank
 
