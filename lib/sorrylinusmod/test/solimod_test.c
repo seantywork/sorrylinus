@@ -3,40 +3,45 @@
 
 
 
-std::string soli_test_uname(){
+void soli_test_uname(char* result){
 
 
     struct utsname uname_ptr;
     uname(&uname_ptr);
 
-    std::string str_ptr = "";
+    strcat(result, "****\n");
 
-    str_ptr += "****\n";
+    strcat(result, "system name - ");
 
-    str_ptr += "system name - ";
-    std::string sysname = uname_ptr.sysname;
-    str_ptr += sysname + "\n";
+    strcat(result, uname_ptr.sysname);
 
-    str_ptr += "node name - ";
-    std::string nodename = uname_ptr.nodename;
-    str_ptr += nodename + "\n";
+    strcat(result, "\n");
 
-    str_ptr += "release - ";
-    std::string release = uname_ptr.release;
-    str_ptr += release + "\n";
-    
-    str_ptr += "version - ";
-    std::string version = uname_ptr.version;
-    str_ptr += version + "\n";
+    strcat(result, "node name - ");
 
-    str_ptr += "machine - ";
-    std::string machine = uname_ptr.machine;
-    str_ptr += machine + "\n";
+    strcat(result, uname_ptr.nodename);
 
-    str_ptr += "****\n";
+    strcat(result, "\n");
 
+    strcat(result, "release - ");
 
-    return str_ptr;  
+    strcat(result, uname_ptr.release);
+
+    strcat(result, "\n");
+
+    strcat(result, "version - ");
+
+    strcat(result, uname_ptr.version);
+
+    strcat(result, "\n");
+
+    strcat(result, "machine - ");
+
+    strcat(result, uname_ptr.machine);
+
+    strcat(result, "\n");
+
+    strcat(result, "****\n");
 
 }
 
