@@ -4,8 +4,6 @@
 
 
 
-
-
 kubectl -n frank delete -f ./k8s/ingress.yaml
 
 kubectl -n frank delete -f ./k8s/ingress-front.yaml
@@ -23,7 +21,7 @@ mv /etc/nginx/conf.d/fd.conf /etc/nginx/conf.d/fd.conf.org
 
 systemctl restart nginx
 
-
+kubectl -n frank delete secret tls frank-tls-secret
 
 kubectl -n frank create secret tls frank-tls-secret --key /etc/letsencrypt/live/feebdaed.xyz/privkey.pem --cert /etc/letsencrypt/live/feebdaed.xyz/fullchain.pem 
 
@@ -35,7 +33,7 @@ RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $RETRY_LIMIT ]
 do
-    if kubectl get pods -n ingress-nginx | grep -q 'Running'
+    if kubectl get deployment -n ingress-nginx | grep -q 'ingress-nginx-controller   1/1'
     then
         echo "ingress ready"
         break;
@@ -45,6 +43,7 @@ do
 
     RETRY_COUNT=$(( $RETRY_COUNT + 1 ))
 
+    sleep 1
 
 done
 
