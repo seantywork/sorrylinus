@@ -5,5 +5,5 @@
 *.cc linguist-vendored=false
 *.hpp linguist-vendored=false
 *.sh linguist-vendored=false
-*.py linguist-vendored=false
-*.js linguist-vendored=false
+*.py linguist-vendored
+*.js linguist-vendored

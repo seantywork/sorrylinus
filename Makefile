@@ -1,146 +1,84 @@
-ifeq (${USR_LOCAL_INCLUDE_PREFIX},)
-	USR_LOCAL_INCLUDE_PREFIX := /usr/local/include
-endif
 
+GCC_FLAGS := -Wall
 
-ifeq (${USR_LOCAL_LIB_PREFIX},)
-	USR_LOCAL_LIB_PREFIX := /usr/local/lib
-endif
+GCC_OBJ_FLAGS := -Wall -c
 
+GCC_LIB_FLAGS := -Wall -shared
 
-ifeq (${USR_LOCAL_INCLUDE_SOLIMOD},)
-	USR_LOCAL_INCLUDE_SOLIMOD := /usr/local/include/sorrylinusmod
-endif
+GCC_LIB_OBJ_FLAGS := -Wall -c -fpic 
 
-ifeq (${USR_LOCAL_LIB_SOLIMOD},)
-	USR_LOCAL_LIB_SOLIMOD := /usr/local/lib/sorrylinusmod
-endif
+DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev libboost-all-dev
 
+INCLUDES := -I./include
 
-all: src/app.cc
+LINKS := -L./lib
 
-	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/mod -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/mod -o src/soliapp src/app.cc -lsolimod -lsqlite3 -lssl -lcrypto
+LOADS := -Wl,-rpath=./lib
 
+LIBS := -lsolimod -lsqlite3 -lssl -lcrypto
 
-dep-install:
 
-	cp -R include/httplib ${USR_LOCAL_INCLUDE_PREFIX}/
-	cp -R include/jsonlib ${USR_LOCAL_INCLUDE_PREFIX}/
-	cp -R include/websocketpp ${USR_LOCAL_INCLUDE_PREFIX}/
 
+SOLIMOD_OBJS := solimod.o
 
-	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/httplib
-	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/jsonlib
-	chmod -R 655 ${USR_LOCAL_INCLUDE_PREFIX}/websocketpp
+APP_OBJS := client.o 
+APP_OBJS += client_mod.o
+APP_OBJS += models.o
 
 
 
-dep-uninstall:
+all:
 
-	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/httplib
-	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/jsonlib
-	rm -r ${USR_LOCAL_INCLUDE_PREFIX}/websocketpp
+	@echo "sorrylinus"
 
-dep-install-lib:
 
-	sudo apt-get update
+dep-package:
 
-	sudo apt-get -y install sqlite3 libsqlite3-dev
 
-	sudo apt-get -y install libmysqlcppconn-dev
-	
-	sudo apt-get install -y libboost-all-dev
+	apt-get update
 
-	sudo apt-get install -y libssl-dev 
-	
-	sudo apt-get install -y libcurl4-openssl-dev
+	apt-get -y install $(DEP_PACKAGES)
 
-#	git clone https://github.com/mrtazz/restclient-cpp.git
+dep-source:
 
-#	cd restclient-cpp && ./autogen.sh && ./configure && make install
+	mkdir -p ccwslib
 
-#	rm -r restclient-cpp
+	mkdir -p json
 
+	mkdir -p ./include/websocketpp
 
-dep-install-solimod:
+	mkdir -p ./include/jsonlib
 
-	mkdir -p ${USR_LOCAL_INCLUDE_SOLIMOD}
-	mkdir -p ${USR_LOCAL_LIB_SOLIMOD}
-	cp -R include/sorrylinusmod/* ${USR_LOCAL_INCLUDE_SOLIMOD}/
-	chmod -R 655 ${USR_LOCAL_INCLUDE_SOLIMOD}
-	chmod -R 655 ${USR_LOCAL_LIB_SOLIMOD}
+	git -C ./ccwslib init
 
-dep-uninstall-solimod:
+	git -C ./json init
 
-	rm -r ${USR_LOCAL_INCLUDE_SOLIMOD}
-	rm -r ${USR_LOCAL_LIB_SOLIMOD}
+	git -C ./ccwslib pull https://github.com/seantywork/websocketpp.git master 
 
+	git -C ./json pull https://github.com/seantywork/json.git develop
 
-build: src/app.cc
+	/bin/cp -rf ./ccwslib/websocketpp/* ./include/websocketpp
 
-	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/mod -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/mod -o src/soliapp src/app.cc -lsolimod -lsqlite3 -lssl -lcrypto 
+	/bin/cp -rf ./json/single_include/nlohmann/* ./include/jsonlib
 
-build-test: src/app.cc
+	sudo rm -rf ./ccwslib ./json
 
-	g++ -Wall -pthread -L${USR_LOCAL_LIB_SOLIMOD}/test -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/test -o src/soliapp src/app.cc -lsolimod_test -lsqlite3 -lssl -lcrypto
 
-build-no-mod: src/app.cc
+solimod: $(SOLIMOD_OBJS)
 
-	g++ -Wall -pthread -o src/soliapp src/app.cc -lsqlite3 -lssl -lcrypto
+	gcc $(GCC_LIB_FLAGS) $(INCLUDES) -o libsolimod.so $(SOLIMOD_OBJS)
 
+	mv libsolimod.so ./src/lib
 
-clean: src/soliapp
+solimod.o:
 
-	rm -r src/soliapp
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod.o src/module/solimod.c 
 
 
-mod-build: lib/sorrylinusmod/mod/solimod.c
+soliapp: 
 
-	g++ -c -Wall -o solimod.o -fpic lib/sorrylinusmod/mod/solimod.c
+	make -C src
 
-	g++ -shared -o libsolimod.so solimod.o
+clean:
 
-mod-clean: solimod.o libsolimod.so
-
-	rm -r solimod.o
-	rm -r libsolimod.so
-
-mod-install: libsolimod.so
-
-	install -d ${USR_LOCAL_LIB_SOLIMOD}/mod
-	install -m 644 libsolimod.so ${USR_LOCAL_LIB_SOLIMOD}/mod
-
-mod-uninstall:
-
-	rm -r ${USR_LOCAL_LIB_SOLIMOD}/mod
-
-
-test-build: test/test_soli.cc
-
-	g++ -Wall -L${USR_LOCAL_LIB_SOLIMOD}/test -Wl,-rpath=${USR_LOCAL_LIB_SOLIMOD}/test -o test/testsoli test/test_soli.cc -lsolimod_test 
-
-
-test-clean: test/testsoli
-	
-	rm -r test/testsoli
-
-test-mod-build: lib/sorrylinusmod/test/solimod_test.c
-
-	g++ -c -Wall -o solimod_test.o -fpic lib/sorrylinusmod/test/solimod_test.c
-
-	g++ -shared -o libsolimod_test.so solimod_test.o
-
-test-mod-clean: solimod_test.o libsolimod_test.so
-	
-	rm -r solimod_test.o
-	rm -r libsolimod_test.so
-
-test-mod-link: libsolimod_test.so
-
-	install -d ${USR_LOCAL_LIB_SOLIMOD}/test
-	install -m 644 libsolimod_test.so ${USR_LOCAL_LIB_SOLIMOD}/test
-
-
-test-mod-unlink: 
-
-	rm -r ${USR_LOCAL_LIB_SOLIMOD}/test
+	rm -rf *.o *.out *.so *.a src/soliapp src/*.o src/lib/*.so src/lib/*.a src/lib/*.o

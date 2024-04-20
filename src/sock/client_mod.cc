@@ -1,10 +1,6 @@
-#ifndef SOCK_CLIENT_HEADER
-#define SOCK_CLIENT_HEADER
-#include <string>
-#include <iostream>
-#endif
 
-#include "../module/module.cc"
+#include "sorrylinus/app/core.h"
+#include "sorrylinus/mod/core.h"
 
 std::string mod_query(std::string in_message){
 
@@ -12,8 +8,12 @@ std::string mod_query(std::string in_message){
 
     if(in_message == "test-uname"){
 
-        ret = mod_soli_test_uname();
+        char test_uname[MAX_TEST_UNAME_LEN] = {0};
+
+        SOLIMOD_test_uname(test_uname);
         
+        ret = test_uname;
+
 
     } else{
 

@@ -1,20 +1,4 @@
-#ifndef SOCK_CLIENT_HEADER
-#define SOCK_CLIENT_HEADER
-#include <websocketpp/client.hpp>
-//#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/config/asio_client.hpp>
-#include <fstream>
-#include "./client_mod.cc"
-#endif
-
-//using client = websocketpp::client<websocketpp::config::asio_client>;
-using connection_hdl = websocketpp::connection_hdl;
-using websocketpp::lib::placeholders::_1;
-using websocketpp::lib::placeholders::_2;
-
-
-using client = websocketpp::client<websocketpp::config::asio_tls_client>;
-using ssl_context = websocketpp::lib::asio::ssl::context;
+#include "sorrylinus/app/core.h"
 
 
 

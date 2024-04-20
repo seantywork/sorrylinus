@@ -1,25 +1,8 @@
-#ifndef PREPROCESSOR_HEADER 
-#define PREPROCESSOR_HEADER 
-#include <httplib/httplib.h>
-#include <jsonlib/json.hpp>
-#endif
-
-
-#include "./router/router.cc"
-#include "./sock/client.cc"
-
-
-
-using namespace httplib;
-
-
-using json = nlohmann::json;
+#include "sorrylinus/app/core.h"
 
 std::ifstream app_f("./config.json");
 json app_config_data = json::parse(app_f);
 
-std::string ADDRESS = app_config_data["ADDRESS"];
-int PORT =  app_config_data["PORT"];
 std::string SOCK_LOCAL_ADDR = app_config_data["SOCK_LOCAL_ADDR"];
 std::string SOCK_FEEB_ADDR = app_config_data["SOCK_FEEB_ADDR"];
 
@@ -111,21 +94,10 @@ int main(int argc, char **argv){
   } else {
 
 
-    std::cout << "entering AP mode..." << std::endl;
+    std::cout << "invalid argument combination" << std::endl;
 
-    Server app;
-
-    Router rt(&app);
-
-    rt.Init();
-
-
-    std::cout << "server is up and runnning..." << std::endl;
-
-    std::cout << "-----> HOST ADDRESS : " << ADDRESS << " " << "PORT : " << PORT << std::endl;
-
-    app.listen(ADDRESS, PORT);
-
+    return -1;
+    
   }
 
 
