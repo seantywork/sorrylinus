@@ -54,5 +54,4 @@ Thanks To
 [Peter Thorson](https://github.com/zaphoyd/websocketpp)
 - JSON Parser
 [Niels Lohmann](https://github.com/nlohmann/json)
-- OAuth2
-[Giuseppe Baccini](https://github.com/giubacc/cppOAuth2RestClient)
+
