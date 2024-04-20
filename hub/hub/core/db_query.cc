@@ -1,34 +1,8 @@
-#include <stdlib.h>
-#include <iostream>
-#include <vector>
+#include "frank_hub/core.h"
 
-#include <cppconn/connection.h>
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/resultset.h>
-#include <cppconn/prepared_statement.h>
 
 
 std::string DB_ADDRESS= "tcp://frankdb:3306";
-
-
-struct FrankRecord {
-
-    std::string email;
-    std::string f_session;
-    std::string p_key;
-};
-
-
-template <typename T>
-struct DBResult{
-
-    std::string status;
-    
-    std::vector<T> results; 
-
-};
-
 
 
 DBResult<FrankRecord> get_record_by_email(std::string email){

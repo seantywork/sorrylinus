@@ -1,14 +1,9 @@
 
-#ifndef PREPROCESSOR_HEADER_SOCK
-#define PREPROCESSOR_HEADER_SOCK
 
-#include "./sock_resource.h"
+#include "frank_hub/core.h"
 
-#endif
 
-#include "./peer_verification.cc"
 
-std::future<std::string> AWAIT;
 
 void ph_sock_client(server* hub, 
                     std::vector<connection_hdl>* connections,

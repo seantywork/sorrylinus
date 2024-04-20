@@ -1,16 +1,5 @@
-#ifndef FRANK_PREPROCESSOR_HEADER 
-#define FRANK_PREPROCESSOR_HEADER 
-#include <httplib/httplib.h>
-#include <jsonlib/json.hpp>
-#endif
+#include "frank_cc/server.h"
 
-#include "./frouter/frouter.cc"
-
-
-using namespace httplib;
-
-
-using json = nlohmann::json;
 
 std::ifstream app_f("./config.json");
 json app_config_data = json::parse(app_f);

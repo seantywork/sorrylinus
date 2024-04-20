@@ -1,36 +1,7 @@
-#ifndef FRANK_PREPROCESSOR_HEADER 
-#define FRANK_PREPROCESSOR_HEADER 
-#include <httplib/httplib.h>
-#include <jsonlib/json.hpp>
-#endif
-
-#ifndef FRANK_SQL_HEADER
-#define FRANK_SQL_HEADER
-#include <cppconn/connection.h>
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/resultset.h>
-#include <cppconn/prepared_statement.h>
+#include "frank_cc/server.h"
 
 std::string DB_ADDRESS= "tcp://frankdb:3306";
 
-
-struct FrankRecord {
-
-    std::string email;
-    std::string f_session;
-    std::string p_key;
-};
-
-
-template <typename T>
-struct DBResult{
-
-    std::string status;
-    
-    std::vector<T> results; 
-
-};
 
 DBResult<FrankRecord> get_record_by_fsession(std::string fsession){
 
@@ -226,6 +197,3 @@ DBResult<FrankRecord> unset_record_by_email(std::string user_email){
     return db_res;
 }
 
-
-
-#endif

@@ -1,35 +1,17 @@
-#ifndef FRANK_PREPROCESSOR_HEADER 
-#define FRANK_PREPROCESSOR_HEADER 
-#include <httplib/httplib.h>
-#include <jsonlib/json.hpp>
-#endif
+#include "frank_cc/server.h"
 
-#ifndef FRANK_MODULE_HEADER
-#define FRANK_MODULE_HEADER
-#include <time.h>
-#include <curl/curl.h>
+std::ifstream app_o("./ogapi.json");
+json app_oauth_data = json::parse(app_o);
 
+std::string DEBUG_MODE = app_config_data["DEBUG_MODE"];
+std::string VIEW_ROOT = app_config_data["VIEW_ROOT"];
+std::string LOCAL_URL = app_config_data["LOCAL_URL"];
+std::string REMOTE_URL = app_config_data["REMOTE_URL"];
 
-
-using namespace httplib;
-
-using json = nlohmann::json;
-
-std::ifstream ctrl_f("./config.json");
-json ctrl_config_data = json::parse(ctrl_f);
-
-std::ifstream ctrl_o("./ogapi.json");
-json ctrl_oauth_data = json::parse(ctrl_o);
-
-std::string DEBUG_MODE = ctrl_config_data["DEBUG_MODE"];
-std::string VIEW_ROOT = ctrl_config_data["VIEW_ROOT"];
-std::string LOCAL_URL = ctrl_config_data["LOCAL_URL"];
-std::string REMOTE_URL = ctrl_config_data["REMOTE_URL"];
-
-std::string GOOGLE_CLIENT_ID = ctrl_oauth_data["web"]["client_id"];
-std::string GOOGLE_CLIENT_SECRET = ctrl_oauth_data["web"]["client_secret"];
-std::string GOOGLE_AUTH_ENDPOINT = ctrl_oauth_data["web"]["auth_uri"];
-std::string GOOGLE_TOKEN_ENDPOINT = ctrl_oauth_data["web"]["token_uri"];
+std::string GOOGLE_CLIENT_ID = app_oauth_data["web"]["client_id"];
+std::string GOOGLE_CLIENT_SECRET = app_oauth_data["web"]["client_secret"];
+std::string GOOGLE_AUTH_ENDPOINT = app_oauth_data["web"]["auth_uri"];
+std::string GOOGLE_TOKEN_ENDPOINT = app_oauth_data["web"]["token_uri"];
 std::string OAUTH_REDIRECT_URI = "";
 
 
@@ -175,7 +157,7 @@ std::string get_session_status(const Request &req){
 }
 
 
-static size_t req_write_callback(void *contents, size_t size, size_t nmemb, void *userp)
+size_t req_write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
@@ -246,5 +228,3 @@ std::string request_get_url(std::string req_url){
 
     return readBuffer;
 }
-
-#endif

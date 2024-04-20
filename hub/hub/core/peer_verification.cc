@@ -1,10 +1,8 @@
 
-#ifndef PREPROCESSOR_HEADER_SOCK
-#define PREPROCESSOR_HEADER_SOCK
 
-#include "./sock_resource.h"
+#include "frank_hub/core.h"
 
-#endif
+
  
 int sig_verify(const char* cert_pem, const char* intermediate_pem)
 {

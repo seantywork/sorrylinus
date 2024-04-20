@@ -1,35 +1,4 @@
-
-#include <csignal>
-#include <iostream>
-//#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
-#include <boost/asio.hpp>
-
-#include <websocketpp/config/asio.hpp>
-
-#include <fstream>
-
-#include <future>
-#include <unistd.h>     
-
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-
-#ifndef SOCK_RESOURCE_SQL
-#define SOCK_RESOURCE_SQL
-#include "./sock_resource_sql.h"
-#endif
-
-using connection_hdl = websocketpp::connection_hdl;
-using websocketpp::lib::placeholders::_1;
-using websocketpp::lib::placeholders::_2;
-
-using server = websocketpp::server<websocketpp::config::asio_tls>;
-using ssl_context = websocketpp::lib::asio::ssl::context;
-
-using server_plain =  websocketpp::server<websocketpp::config::asio>;
-
+#include "frank_hub/core.h"
 
 
 
@@ -46,6 +15,8 @@ std::map<void*, connection_hdl> VERIFIED_ADDRCONN_MAPPER;
 std::map<server*, server_plain*> SOCK_TO_FRONT;
 
 std::map<server_plain*, server*> FRONT_TO_SOCK;
+
+std::future<std::string> AWAIT;
 
 
 bool equal_connection_hdl(connection_hdl& a, connection_hdl& b) {
@@ -352,5 +323,3 @@ std::string extract_common_name(const char* cert) {
 
     return ret_cn;
 }
-
-
