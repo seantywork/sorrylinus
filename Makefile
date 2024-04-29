@@ -68,11 +68,11 @@ solimod: $(SOLIMOD_OBJS)
 
 	gcc $(GCC_LIB_FLAGS) $(INCLUDES) -o libsolimod.so $(SOLIMOD_OBJS)
 
-	mv libsolimod.so ./src/lib
+	mv libsolimod.so ./src/modules
 
 solimod.o:
 
-	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod.o src/module/solimod.c 
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod.o lib/solimod.c 
 
 
 soliapp: 

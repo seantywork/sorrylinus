@@ -6,9 +6,9 @@ GCC_OBJ_FLAGS := -Wall -c
 
 INCLUDES := -I../include
 
-LINKS := -L./lib
+LINKS := -L./modules
 
-LOADS := -Wl,-rpath=./lib
+LOADS := -Wl,-rpath=./modules
 
 LIBS := -lsolimod -lsqlite3 -lssl -lcrypto
 
