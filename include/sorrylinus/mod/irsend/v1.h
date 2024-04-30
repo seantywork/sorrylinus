@@ -1,6 +1,12 @@
 #ifndef _SORRYLINUS_MOD_IRSEND_H_
 #define _SORRYLINUS_MOD_IRSEND_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 #include "sorrylinus/mod/core.h"
 
 #include <pigpio.h>
@@ -45,5 +51,10 @@ int irSlingRaw(uint32_t outPin,
 	double dutyCycle,
 	const int *pulses,
 	int numPulses);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 
 #endif
