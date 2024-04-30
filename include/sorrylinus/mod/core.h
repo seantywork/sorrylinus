@@ -15,7 +15,6 @@ void SOLIMOD_test_uname(char* result);
 
 
 
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

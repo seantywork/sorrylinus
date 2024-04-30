@@ -20,6 +20,9 @@ LIBS := -lsolimod -lsqlite3 -lssl -lcrypto
 
 
 SOLIMOD_OBJS := solimod.o
+SOLIMOD_OBJS += solimod_irsend_v1.o
+
+SOLOMOD_LIBS := -lpigpio -lrt -lpthread
 
 APP_OBJS := client.o 
 APP_OBJS += client_mod.o
@@ -66,13 +69,17 @@ dep-source:
 
 solimod: $(SOLIMOD_OBJS)
 
-	gcc $(GCC_LIB_FLAGS) $(INCLUDES) -o libsolimod.so $(SOLIMOD_OBJS)
+	gcc $(GCC_LIB_FLAGS) $(INCLUDES) -o libsolimod.so $(SOLIMOD_OBJS) $(SOLOMOD_LIBS)
 
 	mv libsolimod.so ./src/modules
 
 solimod.o:
 
 	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod.o lib/solimod.c 
+
+solimod_irsend_v1.o:
+
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_irsend_v1.o lib/irsend/v1.c
 
 
 soliapp: 
