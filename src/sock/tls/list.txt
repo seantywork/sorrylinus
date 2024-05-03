@@ -1,4 +1,0 @@
-sub_client_priv.pem
-sub_client_pub.pem
-sub_client.csr
-sub_client.crt
