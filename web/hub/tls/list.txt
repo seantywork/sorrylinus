@@ -1,4 +1,0 @@
-sub_priv.pem
-sub_pub.pem
-sub.csr
-sub.crt
