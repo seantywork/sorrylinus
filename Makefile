@@ -7,7 +7,7 @@ GCC_LIB_FLAGS := -Wall -shared
 
 GCC_LIB_OBJ_FLAGS := -Wall -c -fpic 
 
-DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev libboost-all-dev
+DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev
 
 INCLUDES := -I./include
 

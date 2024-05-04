@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+/bin/cp -Rf ./tls_bin/ca/ca.crt ../web/hubc/tls
+
+
+/bin/cp -Rf ./tls_bin/ca/ca.crt ../src/tls
+
+
+/bin/cp -Rf ./tls_bin/hub/* ../web/hubc/tls/
+
+
+/bin/cp -Rf ./tls_bin/sock/* ../src/tls/
+
+
+
+
+
+

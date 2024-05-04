@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+        frankdb:
+                image: seantywork/frankdb
+                container_name: frankdb
+                ports:
+                        - "3306:3306"
+
+        frankthecloud:
+                image: seantywork/frankthecloud
+                container_name: frankthecloud
+                ports:
+                        - "8000:8000"
+                depends_on:
+                        - frankdb
+
+#        frankhub:
+#                image: seantywork/frankhub
+#                container_name: frankhub
+#                ports:
+#                        - "3010:3000"
+#                        - "3011:3001"
+#                depends_on:
+#                        - frankdb
+              
