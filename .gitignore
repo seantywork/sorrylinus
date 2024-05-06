@@ -5,6 +5,7 @@
 *.srl
 *.o
 *.so
+*.out
 testsoli
 soliapp
 VENV
