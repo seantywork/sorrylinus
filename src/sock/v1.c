@@ -4,6 +4,7 @@ SSL_CTX* ctx = NULL;
 BIO *web = NULL; 
 SSL *ssl = NULL;
 int SOCK_FD;
+int WAITING_HEADER;
 
 const char* const PREFERRED_CIPHERS = "HIGH:!aNULL:!kRSA:!SRP:!PSK:!CAMELLIA:!RC4:!MD5:!DSS";
 
@@ -16,7 +17,11 @@ int hubc_connect(){
     int ret = 1;
     unsigned long ssl_err = 0;
 
-    uint8_t rbuff[MAX_BUFF] = {0};
+    uint8_t header_byte[HUB_HEADER_BYTELEN] = {0};
+    uint8_t body_len_byte[HUB_BODY_BYTELEN] = {0};
+    uint64_t body_len = 0; 
+    uint8_t* rbuff;
+
     uint8_t wbuff[MAX_BUFF] = {0};
 
 
@@ -174,26 +179,40 @@ int hubc_connect(){
 
     printf("sending auth\n");
 
+    body_len = (uint64_t)cert_len;
 
-    int send_res = hubc_write(cert_len, wbuff);
+    int send_res = 0;
+
+    strcpy(header_byte, HUB_HEADER_AUTHSOCK);
+
+    send_res = hubc_write_packet(header_byte, body_len, wbuff);
 
     if(send_res <= 0){
 
-        printf("failed to send\n");
+        printf("failed to send auth\n");
 
         return -1;
+
     }
 
-    int read_res = hubc_read(MAX_BUFF, rbuff);
+    memset(header_byte, 0, HUB_HEADER_BYTELEN);
 
-    if(read_res <= 0){
+    int flag = 0;
+    body_len = 0;
 
-        printf("failed to read\n");
+    rbuff = hubc_read_packet(header_byte, &body_len, &flag);
+
+    if(flag <= 0){
+
+        printf("failed to recv auth\n");
 
         return -1;
+
     }
 
     printf("read: %s\n", rbuff);
+
+    free(rbuff);
 
     return 0;
 }
@@ -428,6 +447,64 @@ int get_socket(char* url_str){
 }
 
 
+int hubc_communicate(){
+
+    int terminate = 0;
+
+    while(terminate == 0){
+
+        uint8_t header[HUB_HEADER_BYTELEN] = {0};
+        uint64_t body_len  = 0;
+        int flag = 0;
+        uint8_t* rbuff;
+        uint8_t wbuff[MAX_BUFF] = {0};
+
+
+        rbuff = hubc_read_packet(header, &body_len, &flag);
+
+        if(flag <= 0){
+            printf("noting to read...\n");
+            continue;
+
+        }
+
+        flag = 0;
+
+        uint8_t* body = hubc_handle(body_len, rbuff, &flag);
+
+        memcpy(wbuff, body, flag);
+
+        free(body);
+
+        free(rbuff);
+
+        memset(header, 0, HUB_HEADER_BYTELEN);
+
+        strcpy(header, HUB_HEADER_RECVSOCK);
+
+        int result = hubc_write_packet(header, flag, wbuff);
+
+        printf("result sent\n");
+
+
+    }
+
+
+}
+
+
+uint8_t* hubc_handle(uint64_t command_len, uint8_t* command, int flag){
+
+    uint8_t* body;
+    
+    printf("read: %d\n", command_len);
+
+    printf("%s\n", command);
+
+    return body;
+}
+
+
 int hubc_write(int write_len, uint8_t* write_bytes){
 
 
@@ -458,6 +535,8 @@ int hubc_read(int read_len, uint8_t* read_bytes){
 
     int valread = 0;
 
+    int ms_until_deadline = 0;
+
     SSL* sslfd = ssl;
 
     uint8_t* rbuff_tmp = (uint8_t*)malloc(read_len * sizeof(uint8_t));
@@ -466,7 +545,31 @@ int hubc_read(int read_len, uint8_t* read_bytes){
 
     int valread_tmp = 0;
 
+    struct timespec rnow;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &rnow);
+
+    struct timespec rdeadline;
+
     while(valread < read_len){
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &rdeadline);
+        
+        ms_until_deadline = ((rdeadline.tv_sec - rnow.tv_sec) * 1000 + (rdeadline.tv_nsec - rnow.tv_nsec) / 1000000);
+
+        if(WAITING_HEADER == 1){
+            ms_until_deadline = 0;
+        } 
+
+        if(ms_until_deadline > HUB_TIMEOUT_MS){
+            
+            printf("time limit exceeded\n");
+
+            free(rbuff_tmp);
+
+            return -10;
+        }
+
 
         valread_tmp = SSL_read(sslfd, (void*)rbuff_tmp, read_len);
 
@@ -511,3 +614,118 @@ int hubc_read(int read_len, uint8_t* read_bytes){
 
 
 }
+
+
+int hubc_write_packet(uint8_t* header, uint64_t body_len, uint8_t* wbuff){
+
+    int valwrite = 0;
+
+    valwrite = hubc_write(HUB_HEADER_BYTELEN, header);
+
+    if(valwrite <= 0){
+
+        printf("packet send header failed\n");
+
+        return valwrite;
+
+    }
+
+
+    uint8_t body_len_byte[HUB_BODY_BYTELEN] = {0};
+
+    uint64_t body_len_new = 0; 
+
+    body_len_new = htonll(body_len);
+
+    memcpy(body_len_byte, &body_len_new, HUB_BODY_BYTELEN);
+
+    valwrite = hubc_write(HUB_BODY_BYTELEN, body_len_byte);
+
+    if(valwrite <= 0){
+
+        printf("packet send body len failed\n");
+
+        return valwrite;
+
+    }
+
+    valwrite = hubc_write(body_len, wbuff);
+
+    if(valwrite <= 0){
+
+        printf("packet send body failed\n");
+
+        return valwrite;
+
+    }
+
+    return valwrite;
+
+
+}
+
+
+
+uint8_t* hubc_read_packet(uint8_t* header, uint64_t* body_len, int* flag){
+
+    uint8_t* rbuff = NULL;
+
+    int valread = 0;
+
+    WAITING_HEADER = 1;
+
+    valread = hubc_read(HUB_HEADER_BYTELEN, header);
+
+    if(valread <= 0){
+
+        printf("packet read header failed \n");
+
+        *flag = valread;
+
+        return rbuff;
+    }
+
+    WAITING_HEADER = 0;
+
+    uint8_t body_len_byte[HUB_BODY_BYTELEN] = {0};
+
+    uint64_t body_len_new = 0;
+
+    valread = hubc_read(HUB_BODY_BYTELEN, body_len_byte);
+
+    if(valread <= 0){
+
+        printf("packet read body len failed \n");
+
+        *flag = valread;
+
+        return rbuff;
+
+    }
+
+    memcpy(&body_len_new, body_len_byte, HUB_BODY_BYTELEN);
+
+    *body_len = ntohll(body_len_new);
+
+    rbuff = (uint8_t*)malloc((*body_len) * sizeof(uint8_t));
+
+    memset(rbuff, 0, (*body_len) * sizeof(uint8_t));
+
+    valread = hubc_read((*body_len), rbuff);
+
+    if(valread <=0){
+
+        printf("packet read failed \n");
+
+        *flag = valread;
+
+        free(rbuff);
+
+        return rbuff;
+    }
+
+    *flag = valread;
+
+    return rbuff;
+}
+

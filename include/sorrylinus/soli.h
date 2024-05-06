@@ -6,7 +6,6 @@
 #include <sys/utsname.h>
 #include <math.h>
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -23,6 +22,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <time.h>
+#include <endian.h>
 
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
@@ -34,6 +34,21 @@
 #include <openssl/x509v3.h>
 #include <openssl/opensslconf.h>
 
+
+#define HUB_WORD           8
+#define HUB_HEADER_BYTELEN HUB_WORD * 3
+#define HUB_BODY_BYTELEN   HUB_WORD * 1
+#define HUB_BODY_BYTEMAX   HUB_WORD * 1280 //10KB
+#define HUB_TIMEOUT_MS 5000
+#define HUB_HEADER_AUTHSOCK "AUTHSOCK"
+#define HUB_HEADER_AUTHFRONT "AUTHFRONT"
+#define HUB_HEADER_AUTHFRANK "AUTHFRANK"
+#define HUB_HEADER_SENDSOCK "SENDSOCK"
+#define HUB_HEADER_RECVSOCK "RECVSOCK"
+#define HUB_HEADER_SENDFRONT "SENDFRONT"
+#define HUB_HEADER_RECVFRONT "RECVFRONT"
+#define HUB_HEADER_SENDFRANK "SENDFRANK"
+#define HUB_HEADER_RECVFRANK "RECVFRANK"
 
 #ifndef UNUSED
 # define UNUSED(x) ((void)(x))
@@ -74,11 +89,23 @@
   } \
 }
 
+#define IS_BIG_ENDIAN (!*(unsigned char *)&(uint16_t){1})
+
+
+#if __BIG_ENDIAN__
+# define htonll(x) (x)
+# define ntohll(x) (x)
+#else
+# define htonll(x) (((uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+# define ntohll(x) (((uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+#endif
+
+
 #define HOST_FULL_ADDRESS "https://feebdaed.xyz:3001"
 
 #define CREDENTIAL_LOCATION "tls/sub_client.crt"
 
-#define MAX_BUFF 4096
+#define MAX_BUFF HUB_BODY_BYTEMAX
 
 int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path);
 

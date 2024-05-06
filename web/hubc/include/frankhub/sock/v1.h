@@ -15,7 +15,8 @@ void sock_handle_conn();
 
 void sock_handle_client(int cfd);
 
+void sock_authenticate(int cfd);
 
-
+void sock_communicate(int chan_idx);
 
 #endif

@@ -10,10 +10,23 @@ struct epoll_event *SOCK_EVENTARRAY;
 
 void sock_listen_and_serve(){
 
-
-    struct sockaddr_in SERVADDR;
+    int result = 0;
 
     SSL_library_init();
+
+    result = read_file_to_buffer(CA_CERT, MAX_PW_LEN, HUB_CA_CERT);
+
+    if(result < 0){
+
+        printf("failed to read ca cert\n");
+
+        return;
+
+    }
+
+
+
+    struct sockaddr_in SERVADDR;
 
     for(int i = 0 ; i < MAX_CONN;i ++){
 
@@ -256,43 +269,205 @@ void sock_handle_conn(){
 
 void sock_handle_client(int cfd){
 
-    int done = 0;
-
-    
-    int valread;
-    int valwrite;
-    uint8_t rbuff[MAX_BUFF] = {0}; 
-    uint8_t wbuff[MAX_BUFF] = {0}; 
-    struct sockaddr_in peeraddr;
-    socklen_t peerlen;
-
-    peerlen = sizeof(peeraddr);
 
     int chan_idx = get_chanctx_by_fd(cfd, ISSOCK);
 
     if(chan_idx < 0){
+        
+        sock_authenticate(cfd);
+
+        return;
+    }
+
+    sock_communicate(chan_idx);
+
+    return;
+
+}
 
 
-        printf("not registered to chan ctx, auth\n");
 
-        valread = sockctx_read(cfd, MAX_BUFF, rbuff);
+void sock_authenticate(int cfd){
 
-        printf("valread: %d\n", valread);
+    int valread;
+    int valwrite;
 
-        printf("rbuff: %s\n", rbuff);
+    struct HUB_PACKET hp;
 
-        strcat(wbuff,"SSL SERVER RESP: HELLO");
 
-        valwrite = sockctx_write(cfd, MAX_BUFF, wbuff);
+    uint8_t id[MAX_ID_LEN] = {0};
 
-        printf("valwrite: %d\n", valwrite);
+    int sock_idx = get_sockctx_by_fd(cfd);
+
+    printf("not registered to chan ctx, auth\n");
+
+    if(sock_idx < 0){
+
+        printf("failed to get sock idx\n");
 
         return;
     }
 
 
+    hp.ctx_type = ISSOCK;
+    hp.fd = SOCK_CTX[sock_idx].sockfd;
+    
+    ctx_read_packet(&hp);
 
+    if(hp.flag <= 0){
+
+
+        printf("failed to read sock\n");
+
+        free_sockctx(sock_idx, 1);
+
+        return;
+
+    }
+    
+
+
+    int verified = sig_verify(hp.rbuff, CA_CERT);
+
+    if(verified < 1){
+
+        printf("invalid signature\n");
+
+        free_sockctx(sock_idx, 1);
+
+        free(hp.rbuff);
+
+        return;
+
+    }
 
     
 
+    int ret_cn = extract_common_name(id, hp.rbuff);
+
+    if(ret_cn != 1){
+
+        printf("invalid id\n");
+
+        free_sockctx(sock_idx, 1);
+
+        free(hp.rbuff);
+
+        return;
+
+
+    }
+
+    printf("id: %s\n", id);
+
+    free(hp.rbuff);
+
+    int chan_idx = update_chanctx_from_sockctx(cfd, id);
+
+    if (chan_idx < 0){
+
+        printf("failed to update chanctx\n");
+
+        free_sockctx(sock_idx, 1);
+
+        return;
+
+    }
+
+
+    uint64_t body_len = (uint64_t)(strlen("SUCCESS") + 1);
+
+    memset(hp.header, 0, HUB_HEADER_BYTELEN);
+
+    memset(hp.wbuff, 0, MAX_BUFF);
+
+    hp.ctx_type = CHAN_ISSOCK;
+
+    strcpy(hp.header, HUB_HEADER_AUTHSOCK);
+
+    hp.body_len = body_len;
+
+    strcat(hp.wbuff,"SUCCESS");
+
+    strcpy(hp.id, id);
+
+    printf("writing...\n");
+    
+    ctx_write_packet(&hp);
+
+    if(hp.flag <= 0){
+
+        printf("failed to send\n");
+
+        return;
+
+    }
+
+    printf("sent\n");
+
+    return;
+
+
+}
+
+
+
+void sock_communicate(int chan_idx){
+
+    printf("incoming sock communication to front\n");
+
+    int frontfd = CHAN_CTX[chan_idx].frontfd;
+
+    if(frontfd == 0){
+
+        printf("no front exists for communication\n");
+
+        return;
+
+    }
+    
+    printf("front exists\n");
+
+    struct HUB_PACKET hp;
+
+    hp.ctx_type = CHAN_ISSOCK;
+
+    strcpy(hp.id, CHAN_CTX[chan_idx].id);
+
+    ctx_read_packet(&hp);
+
+    if(hp.flag <= 0){
+
+        printf("failed to communicate sock read\n");
+
+        return;
+
+    }
+
+    memset(hp.header, 0, HUB_HEADER_BYTELEN);
+
+    memset(hp.wbuff, 0, MAX_BUFF);
+
+    hp.ctx_type = CHAN_ISFRONT;
+
+    strcpy(hp.header, HUB_HEADER_RECVFRONT);
+
+    strncpy(hp.wbuff, hp.rbuff, hp.body_len);
+
+    hp.flag = 0;
+
+    free(hp.rbuff);
+
+    ctx_write_packet(&hp);
+
+    if(hp.flag <= 0){
+
+        printf("failed to send to front\n");
+
+        return;
+    } 
+
+    printf("sent to front\n");
+
+    return;
 }

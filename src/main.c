@@ -18,11 +18,15 @@ int main(int argc, char** argv){
 
     }
 
-
+    result = hubc_communicate();
     
 
+    if(result < 0){
 
+        printf("failed to communicate: %d\n", result);
 
+        return -1;
+    }
 
 
     return 0;
