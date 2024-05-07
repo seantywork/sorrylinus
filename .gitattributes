@@ -6,4 +6,4 @@
 *.hpp linguist-vendored=false
 *.sh linguist-vendored=false
 *.py linguist-vendored
-*.js linguist-vendored
+*.js linguist-vendored=false

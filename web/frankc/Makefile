@@ -6,15 +6,24 @@ GCC_REL_FLAGS := -Wall
 
 GCC_OBJ_FLAGS := -Wall -c
 
-DEP_PACKAGES := libssl-dev
+DEP_PACKAGES := libssl-dev libcurl4-openssl-dev
 
-INCLUDES := -I./include
+DEP_MONGOOSE := git clone https://github.com/seantywork/mongoose.git
 
-LIBS := -lpthread 
+DEP_CJSON := git clone https://github.com/seantywork/cJSON.git
+
+INCLUDES := -I./include -I./vendor -I./vendor/mongoose -I./vendor/cJSON
+
+LIBS := -lpthread -lcurl
 
 
-OBJS := f_admin.o
-OBJS += 
+OBJS := f_core.o
+OBJS += f_admin.o
+OBJS += f_controller.o
+
+
+DEP_OBJS := mongoose.o
+DEP_OBJS += cJSON.o
 
 all: 
 
@@ -27,20 +36,45 @@ dep-package:
 
 	apt-get -y install $(DEP_PACKAGES)
 
-dev: $(OBJS)
+dep-source:
 
-	gcc $(GCC_DEV_FLAGS) $(INCLUDES) -o frankc.out main.c $(OBJS) $(LIBS) 
+	cd vendor && $(DEP_MONGOOSE)
+
+	cd vendor && $(DEP_CJSON)
 
 
-release: $(OBJS)
+dev: $(OBJS) $(DEP_OBJS)
 
-	gcc $(GCC_REL_FLAGS) $(INCLUDES) -o frankc.out main.c $(OBJS) $(LIBS) 
+	gcc $(GCC_DEV_FLAGS) $(INCLUDES) -o frankc.out main.c $(OBJS) $(DEP_OBJS) $(LIBS) 
+
+
+release: $(OBJS) $(DEP_OBJS)
+
+	gcc $(GCC_REL_FLAGS) $(INCLUDES) -o frankc.out main.c $(OBJS) $(DEP_OBJS) $(LIBS) 
+
+f_core.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_core.o main_core.c 
 
 
 f_admin.o:
 
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_admin.o main_admin.c 
 
+
+f_controller.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_controller.o controller/index.c 
+
+
+mongoose.o:
+
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o mongoose.o vendor/mongoose/mongoose.c 
+
+cJSON.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o cJSON.o vendor/cJSON/cJSON.c 
 
 clean:
 

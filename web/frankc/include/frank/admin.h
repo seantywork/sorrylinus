@@ -7,7 +7,7 @@
 
 
 
-#define HOST_FULL_ADDRESS "http://feebdaed.xyz:2999"
+#define HOST_FULL_ADDRESS "tcp://feebdaed.xyz:2999"
 #define ADMIN_PW "letssharewiththewholeuniverse"
 #define ADMIN_CONN 3
 

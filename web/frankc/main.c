@@ -1,13 +1,18 @@
+
 #include "frank/admin.h"
+#include "frank/controller/index.h"
 
-
-
-
+int s_sig_num = 0;
+static void signal_handler(int sig_num) {
+  signal(sig_num, signal_handler);
+  s_sig_num = sig_num;
+}
 
 
 int main(){
 
-
+    srand((unsigned int)time(NULL));
+/*
 
     int sockfd = admin_get_socket(HOST_FULL_ADDRESS);
 
@@ -30,18 +35,27 @@ int main(){
 
         return -1;
     }
+*/
 
-    uint8_t test_send[ADMIN_CONTENT] = {0};
-    uint8_t test_read[ADMIN_CONTENT] = {0};
+    int ogapi = load_og_api_info();
 
-    strcpy(test_send, "seantywork@gmail.com");
+    if(ogapi < 0){
 
-    result = admin_insert_user(test_send, test_read);
+        printf("failed to read og api \n");
 
-    result = admin_eject_user(test_send);
+        return -1;
+    }
+    
 
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
+    mg_log_set(MG_LL_DEBUG);  
 
+    frankc_listen_and_serve();
+ 
+    MG_INFO(("exiting on signal %d", s_sig_num));
 
 
     return 0;
