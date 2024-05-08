@@ -12,7 +12,6 @@ static void signal_handler(int sig_num) {
 int main(){
 
     srand((unsigned int)time(NULL));
-/*
 
     int sockfd = admin_get_socket(HOST_FULL_ADDRESS);
 
@@ -35,7 +34,7 @@ int main(){
 
         return -1;
     }
-*/
+
 
     int ogapi = load_og_api_info();
 
@@ -51,12 +50,13 @@ int main(){
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
-    mg_log_set(MG_LL_DEBUG);  
+    mg_log_set(MG_LL_INFO);  
 
     frankc_listen_and_serve();
  
     MG_INFO(("exiting on signal %d", s_sig_num));
 
+    
 
     return 0;
 }

@@ -15,6 +15,7 @@ char* s_json_header =
 struct mg_mgr mgr;
 
 char GOOGLE_AUTH_ENDPOINT[MAX_REQUEST_URI_LEN] = {0};
+char GOOGLE_TOKEN_ENDPOINT[MAX_REQUEST_URI_LEN] = {0};
 char GOOGLE_CLIENT_ID[MAX_CLIENT_ID_LEN] = {0};
 char GOOGLE_CLIENT_SECRET[MAX_CLIENT_SECRET_LEN] = {0};
 char OAUTH_REDIRECT_URI[MAX_REQUEST_URI_LEN] = {0};
@@ -33,7 +34,71 @@ int load_og_api_info(){
         return result;
     }
 
+    cJSON* ogapi_obj = cJSON_Parse(buff);
 
+    cJSON* web_obj = cJSON_GetObjectItemCaseSensitive(ogapi_obj, "web");
+
+    cJSON* auth_uri = cJSON_GetObjectItemCaseSensitive(web_obj, "auth_uri");
+
+    cJSON* token_uri = cJSON_GetObjectItemCaseSensitive(web_obj, "token_uri");
+
+    cJSON* client_id = cJSON_GetObjectItemCaseSensitive(web_obj, "client_id");
+
+
+    cJSON* client_secret = cJSON_GetObjectItemCaseSensitive(web_obj, "client_secret");
+
+    cJSON* redirect_uris = cJSON_GetObjectItemCaseSensitive(web_obj, "redirect_uris");
+
+    strcpy(GOOGLE_AUTH_ENDPOINT, auth_uri->valuestring);
+
+    strcpy(GOOGLE_TOKEN_ENDPOINT, token_uri->valuestring);
+
+    strcpy(GOOGLE_CLIENT_ID, client_id->valuestring);
+
+    strcpy(GOOGLE_CLIENT_SECRET, client_secret->valuestring);
+
+
+    int arr_idx = 0;
+    cJSON* resolution = NULL;
+
+    cJSON_ArrayForEach(resolution, redirect_uris){
+
+        cJSON* uri = cJSON_GetArrayItem(redirect_uris, arr_idx);
+        
+
+        if(DEBUG_LOCAL == 1){
+
+            if(arr_idx == 0){
+
+                strcpy(OAUTH_REDIRECT_URI, uri->valuestring);
+
+                break;
+
+            }
+
+        }
+
+        if(arr_idx == 1){
+
+            
+            strcpy(OAUTH_REDIRECT_URI, uri->valuestring);
+
+
+            break;
+
+        }
+
+        arr_idx += 1;
+    }
+
+
+    printf("auth uri: %s\n", GOOGLE_AUTH_ENDPOINT);
+    printf("token uri: %s\n", GOOGLE_TOKEN_ENDPOINT);
+    printf("client id: %s\n", GOOGLE_CLIENT_ID);
+    printf("client secret: %s\n", GOOGLE_CLIENT_SECRET);
+    printf("redirect uri: %s\n", OAUTH_REDIRECT_URI);
+
+    return arr_idx;
 
 }
 
@@ -56,35 +121,148 @@ void timer_sntp_fn(void *param) {  // SNTP timer function. Sync up time
   mg_sntp_connect(param, "udp://time.google.com:123", sntp_fn, NULL);
 }
 
+int cookie_parse(char* result, char* cookie, char* key){
 
+
+    char* ptr = NULL;
+
+    char key_check[MAX_COOKIE_KEYLEN] = {0};
+
+    int key_check_len = 0;
+
+    strcpy(key_check, key);
+
+    strcat(key_check, "=");
+
+    ptr = strstr(cookie, key_check);
+
+    if(ptr == NULL){
+        return -1;
+    }
+
+    key_check_len = strlen(key_check);
+
+    char* result_ptr = result;
+
+    int keylen = DEFAULT_RANDLEN * 2;
+
+    ptr = ptr + key_check_len;
+
+    if(strlen(ptr) < keylen){
+
+        printf("access token format invalid\n");
+
+        return -2;
+
+    }
+
+    for(int i = 0; i < keylen; i++){
+
+
+        *result_ptr = *ptr;
+
+        result_ptr += 1;
+
+        ptr += 1;
+
+    }
+
+    return keylen;
+
+}
+
+
+int code_parse(char* result, char* query){
+
+    int codelen = 0;
+
+    char* key_start = "code=";
+
+    char* key_end = "&";
+
+    char* start_ptr;
+    char* end_ptr;
+    char* ptr;
+    char* result_ptr = result;
+
+
+    start_ptr = strstr(query, key_start);
+
+    if(start_ptr == NULL){
+        return -1;
+    }
+    end_ptr = strstr(query, key_end);
+
+    if(end_ptr == NULL){
+
+        return -2;
+
+    }
+
+    start_ptr += strlen(key_start);
+
+
+    int diff = end_ptr - start_ptr;
+
+    if(diff <= 0){
+        return -3;
+    }
+
+
+    ptr = start_ptr;
+
+    for(int i = 0;i < MAX_CODELEN; i++){
+
+        if(*ptr == '&'){
+            break;
+        }
+
+        *result_ptr = *ptr;
+        
+        result_ptr += 1;
+        ptr += 1;
+
+        codelen += 1;
+    }
+
+
+    return codelen;
+
+
+
+}
 
 int get_session_status(struct mg_http_message *hm){
 
-    struct mg_str* result_str;
 
-    result_str = mg_http_get_header(hm, "access_token");
+    struct mg_str* header_str;
+    
 
-    if(result_str == NULL){
+    header_str = mg_http_get_header(hm, "Cookie");
+
+    if(header_str == NULL){
+
+        printf("header cookie not found\n");
+
+        return -1;
+    } 
+
+    char result_str[MAX_USER_ACCESS_TOKEN] = {0};
+
+
+    int cookie_len = cookie_parse(result_str, header_str->buf, "access_token");
+
+    if(cookie_len < 0){
 
         printf("session cookie not found\n");
 
         return -1;
     } 
 
-    int compare_len = 0;
+    printf("result str: %s\n", result_str);
+    
 
-    if(result_str->len > MAX_USER_ACCESS_TOKEN){
-
-        printf("access token max len exceeded\n");
-
-        return -2;
-
-    } else {
-
-        compare_len = result_str->len;
-
-    }
-
+    int compare_len = cookie_len;
 
     int found = 0;
 
@@ -96,7 +274,7 @@ int get_session_status(struct mg_http_message *hm){
             continue;
         }
 
-        if(strncmp(user_array[i].access_token, result_str->buf, compare_len) == 0){
+        if(strncmp(user_array[i].access_token, result_str, MAX_USER_ACCESS_TOKEN) == 0){
 
             found = 1;
 
@@ -152,11 +330,11 @@ int add_session_status(struct mg_http_message *hm,  char* user_access_token){
     }
 
 
-    gen_random_bytestream(randbytes, 64);
+    gen_random_bytestream(randbytes, DEFAULT_RANDLEN);
 
-    bin2hex(user_access_token, 64, randbytes);
+    bin2hex(user_access_token, DEFAULT_RANDLEN, randbytes);
 
-    return 0;
+    return idx;
 }
 
 
@@ -227,11 +405,12 @@ int get_ticket(struct mg_http_message *hm, char* pass){
 }
 
 int add_ticket(struct mg_http_message *hm, char* name, char* new_pass){
- 
+    
+    int result = -1;
 
-    int result = get_session_status(hm);
+    int result_idx = get_session_status(hm);
 
-    if(result < 0){
+    if(result_idx < 0){
 
         printf("failed to add ticket: no session\n");
 
@@ -239,8 +418,16 @@ int add_ticket(struct mg_http_message *hm, char* name, char* new_pass){
 
     }
 
-    
-    result = admin_insert_user(name, new_pass);
+    if(DEBUG_THIS == 1){
+
+        result = 0;
+
+
+    } else {
+
+        result = admin_insert_user(name, new_pass);
+    }
+
 
     if(result < 0){
 
@@ -250,9 +437,11 @@ int add_ticket(struct mg_http_message *hm, char* name, char* new_pass){
 
     }
 
-    strcpy(user_array[result].pass, new_pass);
+    strcpy(user_array[result_idx].name, name);
 
-    user_array[result].ticket = 1;
+    strcpy(user_array[result_idx].pass, new_pass);
+
+    user_array[result_idx].ticket = 1;
 
 
     return 1;
@@ -260,11 +449,11 @@ int add_ticket(struct mg_http_message *hm, char* name, char* new_pass){
 
 int del_ticket(struct mg_http_message *hm){
 
+    int result = 0;
 
+    int result_idx = get_session_status(hm);
 
-    int result = get_session_status(hm);
-
-    if(result < 0){
+    if(result_idx < 0){
 
         printf("failed to del ticket: no session\n");
 
@@ -272,9 +461,15 @@ int del_ticket(struct mg_http_message *hm){
 
     }
 
+    if(DEBUG_THIS == 1){
 
+        result = 0;
+
+    } else {
+
+        result = admin_eject_user(user_array[result].name);
+    }
     
-    result = admin_eject_user(user_array[result].name);
 
     if(result < 0){
 
@@ -285,43 +480,534 @@ int del_ticket(struct mg_http_message *hm){
     }
 
 
-    user_array[result].ticket = 0;
+    user_array[result_idx].ticket = 0;
+
+    memset(user_array[result_idx].name, 0, MAX_USER_NAME);
+    memset(user_array[result_idx].pass, 0, MAX_USER_PASS);
 
     return 0;
 }
 
 
+int get_ticket_ws(char* token, char* ticket){
+
+    int found = 0;
+    int idx = -1;
+
+    for(int i = 0 ; i < MAX_USERS; i ++){
+
+
+        if(user_array[i].ticket != 1){
+            continue;
+        }
+
+        if(strcmp(user_array[i].access_token, token) == 0){
+
+            found = 1;
+
+            idx = i;
+
+            break;
+        }
+
+
+    }
+
+    if(found != 1){
+
+        printf("failed to get ticket ws\n");
+
+        return -1;
+    }
+
+    strcpy(ticket, user_array[idx].pass);
+
+    return idx;
+}
 
 
 void handle_goauth2_login(struct mg_connection *c, struct mg_http_message *hm) {
-  char cookie[MAX_COOKIE_LEN];
-  mg_snprintf(cookie, sizeof(cookie),
-              "Set-Cookie: access_token=%s; Path=/; "
-              "%sHttpOnly; SameSite=Lax; Max-Age=%d\r\n",
-              "CHANGE", c->is_tls ? "Secure; " : "", 3600 * 24);
-  mg_http_reply(c, 200, cookie, "{%m:%m}", MG_ESC("user"), MG_ESC("CAHNGE"));
+
+    char redirect_header[MAX_REQUEST_URI_LEN] = {0};
+
+
+    char request_uri[MAX_REQUEST_URI_LEN] = {0};
+
+
+    char cookie[MAX_COOKIE_LEN];
+
+
+    int user_idx = get_session_status(hm);
+
+    if(user_idx < 0){
+
+        char user_token[MAX_USER_ACCESS_TOKEN] = {0};
+
+        int new_idx = add_session_status(hm, user_token);
+
+        if(new_idx < 0){
+
+            printf("connection maxed out\n");
+
+            mg_http_reply(c, 500, "","%m", MG_ESC("connection full"));
+
+            return;
+
+        }
+
+        user_idx = new_idx;
+
+        strcpy(user_array[user_idx].access_token, user_token);
+
+        printf("access token: %s\n", user_array[user_idx].access_token);
+
+        mg_snprintf(cookie, sizeof(cookie),
+                    "Set-Cookie: access_token=%s; Path=/;\r\n",
+                    user_array[user_idx].access_token);
+        
+
+    } else {
+
+        if(user_array[user_idx].ticket == 1){
+
+            strcpy(request_uri,"/frank.html");
+
+            mg_snprintf(redirect_header, sizeof(redirect_header),
+                                    "Location: %s\r\n",
+                                    request_uri);
+            
+
+            mg_http_reply(c, 302, redirect_header,"");
+
+            return;
+
+        }
+
+    }
+
+    strcat(request_uri, GOOGLE_AUTH_ENDPOINT);
+    strcat(request_uri, "?");
+
+    strcat(request_uri, "client_id=");
+    strcat(request_uri, GOOGLE_CLIENT_ID);
+    strcat(request_uri, "&");
+
+    strcat(request_uri, "redirect_uri=");
+    strcat(request_uri, OAUTH_REDIRECT_URI);
+    strcat(request_uri, "&");
+
+    strcat(request_uri, "scope=https://www.googleapis.com/auth/userinfo.email&");
+    strcat(request_uri, "response_type=code");
+
+    printf("oauth2 login request: %s\n", request_uri);
+
+
+    mg_snprintf(redirect_header, sizeof(redirect_header),
+                            "Location: %s\r\n%s",
+                            request_uri,
+                            cookie);
+    
+
+    mg_http_reply(c, 302, redirect_header,"");
+
+
 }
 
 void handle_goauth2_login_callback(struct mg_connection *c, struct mg_http_message *hm) {
-  char cookie[MAX_COOKIE_LEN];
-  mg_snprintf(cookie, sizeof(cookie),
-              "Set-Cookie: access_token=%s; Path=/; "
-              "%sHttpOnly; SameSite=Lax; Max-Age=%d\r\n",
-              "CHANGE", c->is_tls ? "Secure; " : "", 3600 * 24);
-  mg_http_reply(c, 200, cookie, "{%m:%m}", MG_ESC("user"), MG_ESC("CHANGE"));
+
+    char request_uri[MAX_REQUEST_URI_LEN] = {0};
+
+    char redirect_header[MAX_REQUEST_URI_LEN] = {0};
+
+    char buff[MAX_BUFF] = {0};
+
+    int user_idx = get_session_status(hm);
+
+    if(user_idx < 0){
+
+        printf("invalid access\n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+
+    }
+
+    printf("callback access: %s\n", user_array[user_idx].access_token);
+
+    char code[MAX_PW_LEN] = {0};
+
+
+    int codelen = code_parse(code, hm->query.buf);
+
+    if(codelen < 0){
+
+        printf("invalid code\n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+
+    }
+    
+    printf("code: %s\n", code);
+
+
+    int post_result = request_post_code(buff, GOOGLE_TOKEN_ENDPOINT, code);
+
+    if(post_result < 0){
+
+        printf("failed to post code\n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+    }
+
+    char goauth_token[GOAUTH_TOKENLEN] = {0}; 
+
+    cJSON* oadata = cJSON_Parse(buff);
+
+    cJSON* goauth_token_obj = cJSON_GetObjectItemCaseSensitive(oadata, "access_token");
+
+    strcpy(request_uri, GOAUTH_USER_INFO_API);
+
+    strcat(request_uri, goauth_token_obj->valuestring);
+    
+    memset(buff, 0, MAX_BUFF);
+
+    int token_result = request_get_url(buff, request_uri);
+
+    if(token_result < 0){
+
+        printf("failed to auth token\n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+    }
+
+
+    cJSON* uidata = cJSON_Parse(buff);
+
+    cJSON* error = cJSON_GetObjectItemCaseSensitive(uidata, "error");
+
+    if(error != NULL){
+
+        printf("failed to authenticate \n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+
+    }
+
+    cJSON* email = cJSON_GetObjectItemCaseSensitive(uidata, "email");
+
+
+    uint8_t pw[MAX_PW_LEN] = {0};
+
+    if(DEBUG_THIS == 1){
+
+        strcpy(pw, "blahblah");
+
+        printf("pw: %s\n", pw);
+
+    }
+
+    int ticket_result = add_ticket(hm, email->valuestring, pw);
+
+    if(ticket_result < 0){
+
+        printf("failed to issue ticket \n");
+
+        mg_http_reply(c, 500, "","%m", MG_ESC("internal error"));
+
+        return;
+
+    }
+
+    //char cookie[MAX_COOKIE_LEN] = {0};
+
+
+
+    mg_snprintf(redirect_header, sizeof(redirect_header),
+                            "Location: %s\r\n",
+                            "/frank.html");
+    
+
+    mg_http_reply(c, 302, redirect_header,"");
+
+
 }
 
 
 void handle_logout(struct mg_connection *c, struct mg_http_message *hm) {
-  char cookie[MAX_COOKIE_LEN];
-  mg_snprintf(cookie, sizeof(cookie),
-              "Set-Cookie: access_token=; Path=/; "
-              "Expires=Thu, 01 Jan 1970 00:00:00 UTC; "
-              "%sHttpOnly; Max-Age=0; \r\n",
-              c->is_tls ? "Secure; " : "");
-  mg_http_reply(c, 200, cookie, "true\n");
+
+    char header[MAX_REQUEST_URI_LEN] = {0};
+
+    int user_idx = get_session_status(hm);
+
+    if(user_idx < 0){
+
+        printf("not a connection to logout\n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+
+    }
+
+    if(user_array[user_idx].ticket != 1){
+
+        printf("no valid ticket to remove \n");
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+        return;
+
+    }
+
+    int del_result = del_ticket(hm);
+
+    if (del_result < 0){
+
+        printf("failed to remove ticket\n");
+
+        mg_http_reply(c, 500, "","%m", MG_ESC("internal error"));
+
+        return;
+
+    }
+
+    int del_sess = del_session_status(hm, user_array[user_idx].access_token);
+
+    if (del_result < 0){
+
+        printf("failed to remove ticket\n");
+
+        mg_http_reply(c, 500, "","%m", MG_ESC("internal error"));
+
+        return;
+
+    }
+
+    printf("logout successful\n");
+
+    char cookie[MAX_COOKIE_LEN] = {0};
+
+    mg_snprintf(cookie, sizeof(cookie),
+                "Set-Cookie: access_token=; Path=/; \r\n");
+
+    mg_snprintf(header, sizeof(header),"%s", cookie);
+    
+
+    mg_http_reply(c, 200, header,"{%m:%m}", MG_ESC("message"), MG_ESC("SUCCESS"));
+
+
 }
 
+
+void handle_web_root(struct mg_connection *c, struct mg_http_message *hm) {
+
+
+    struct mg_http_serve_opts opts;
+    memset(&opts, 0, sizeof(opts));
+#if MG_ARCH == MG_ARCH_UNIX || MG_ARCH == MG_ARCH_WIN32
+    opts.root_dir = "web_root";  // On workstations, use filesystem
+    
+#else
+    opts.root_dir = "/web_root";  // On embedded, use packed files
+    opts.fs = &mg_fs_packed;
+#endif
+    
+
+    mg_http_serve_dir(c, hm, &opts);
+
+
+}
+
+
+void ws_handler(struct mg_connection *c, struct mg_ws_message *wm){
+
+    char ws_buff[MAX_WS_BUFF] = {0};
+
+    char ws_command[WS_MAX_COMMAND_LEN] = {0};
+
+    char ws_access_token[MAX_USER_ACCESS_TOKEN] = {0};
+
+    cJSON* response = cJSON_CreateObject();
+
+    int datalen = 0;
+
+    if(wm->data.len > MAX_WS_BUFF){
+
+        printf("failed handle ws: data too big\n");
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+    }
+
+
+    cJSON* req_obj = cJSON_Parse(wm->data.buf);
+
+    if(req_obj == NULL){
+
+        printf("failed handle ws: data invalid\n");
+
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+
+    }
+
+    cJSON* command = cJSON_GetObjectItemCaseSensitive(req_obj, "command");
+
+    if(command == NULL){
+
+        printf("failed handle ws: data invalid\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+
+    }
+
+    cJSON* token = cJSON_GetObjectItemCaseSensitive(req_obj, "access_token");
+
+    if(token == NULL){
+
+        printf("failed handle ws: data invalid\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+
+    }
+
+    printf("command: %s\n", command->valuestring);
+
+    datalen = strlen(command->valuestring);
+
+    if(datalen > WS_MAX_COMMAND_LEN){
+
+        printf("failed handle ws: command too long\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+    }
+
+    datalen = strlen(token->valuestring);
+
+    if(datalen > MAX_USER_ACCESS_TOKEN){
+
+        printf("failed handle ws: token too long\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+    }
+    strcpy(ws_command, command->valuestring);
+
+    strcpy(ws_access_token, token->valuestring);
+
+    char ws_ticket[MAX_USER_PASS] = {0};
+
+    int ticket_result = get_ticket_ws(ws_access_token, ws_ticket);
+
+    if(ticket_result < 0){
+
+        printf("failed handle ws: no ticket\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+    }
+
+
+    if(strcmp(ws_command, WS_COMMAND_REQ_KEY) == 0){
+
+        printf("sending req key\n");
+
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString(ws_ticket));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);   
+
+    } else {
+
+        printf("failed handle ws: no such command\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+        
+        return;
+
+    }
+    
+}
 
 size_t req_write_callback(void *data, size_t size, size_t nmemb, void *clientp)
 {
@@ -408,11 +1094,11 @@ int request_get_url(char* result, char* req_url){
     return 0;
 }
 
-void handle_debug(struct mg_connection *c, struct mg_http_message *hm) {
-  int level = mg_json_get_long(hm->body, "$.level", MG_LL_DEBUG);
-  mg_log_set(level);
-  mg_http_reply(c, 200, "", "Debug level set to %d\n", level);
-}
+
+
+
+
+
 
 size_t print_int_arr(void (*out)(char, void *), void *ptr, va_list *ap) {
   size_t i, len = 0, num = va_arg(*ap, size_t);  // Number of items in the array
@@ -448,10 +1134,7 @@ void route(struct mg_connection *c, int ev, void *ev_data) {
 
     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
 
-
     if (mg_match(hm->uri, mg_str("/test/frank-health"), NULL)) {
-
-
 
         mg_http_reply(c, 200, "", "{%m:%m}", MG_ESC("message"), MG_ESC("fine"));
 
@@ -469,30 +1152,27 @@ void route(struct mg_connection *c, int ev, void *ev_data) {
 
     } else if (mg_match(hm->uri, mg_str("/front-client"), NULL)){
 
+        printf("WS UPGRADE!!!!!\n");
+
         mg_ws_upgrade(c, hm, NULL);
 
 
-    } else {
+    }  else {
 
-        struct mg_http_serve_opts opts;
-        memset(&opts, 0, sizeof(opts));
-#if MG_ARCH == MG_ARCH_UNIX || MG_ARCH == MG_ARCH_WIN32
-      opts.root_dir = "web_root";  // On workstations, use filesystem
-#else
-      opts.root_dir = "/web_root";  // On embedded, use packed files
-      opts.fs = &mg_fs_packed;
-#endif
-
-
-        mg_http_serve_dir(c, ev_data, &opts);
+        handle_web_root(c, hm);
     }
-    MG_DEBUG(("%lu %.*s %.*s -> %.*s", c->id, (int) hm->method.len,
-              hm->method.buf, (int) hm->uri.len, hm->uri.buf, (int) 3,
-              &c->send.buf[9]));
+    if(DEBUG_THIS == 1){
+
+        MG_DEBUG(("%lu %.*s %.*s -> %.*s", c->id, (int) hm->method.len,
+                hm->method.buf, (int) hm->uri.len, hm->uri.buf, (int) 3,
+                &c->send.buf[9]));
+
+    }
   } else if (ev == MG_EV_WS_MSG) {
 
     struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
-    mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
+    
+    ws_handler(c, wm);
 
   }
 }

@@ -1,26 +1,27 @@
 version: "3"
 
 services:
-        frankdb:
-                build: ./mysql
-                container_name: frankdb
-                ports:
-                        - "3306:3306"
+        #frankdb:
+        #        build: ./mysql
+        #        container_name: frankdb
+        #        ports:
+        #                - "3306:3306"
 
+
+        frankhub:
+                build: ./hub
+                container_name: frankhub
+                ports:  
+                        - "2999:2999"
+                        - "3000:3000"
+                        - "3001:3001"
+                depends_on:
+                        - frankdb
+              
         frankthecloud:
                 build: ./frankcc
                 container_name: frankthecloud
                 ports:
                         - "8000:8000"
                 depends_on:
-                        - frankdb
-
-        frankhub:
-                build: ./hub
-                container_name: frankhub
-                ports:
-                        - "3000:3000"
-                        - "3001:3001"
-                depends_on:
-                        - frankdb
-              
+                        - frankhub

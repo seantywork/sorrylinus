@@ -16,7 +16,11 @@
 #include <endian.h>
 #include <pthread.h>
 
+#define DEBUG_THIS 0
+#define DEBUG_LOCAL 1
 
+
+#define MAX_ID_LEN 1024
 #define MAX_PW_LEN 4096
 
 struct memory {

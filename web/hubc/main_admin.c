@@ -259,9 +259,9 @@ int admin_insert_user(int infd, uint8_t* id){
 
     strcpy(new_command, ADMIN_COMMAND_INSERTUSER);
 
-    gen_random_bytestream(pw_bin, 64);
+    gen_random_bytestream(pw_bin, DEFAULT_RANDLEN);
 
-    bin2hex(pw, 64, pw_bin);
+    bin2hex(pw, DEFAULT_RANDLEN, pw_bin);
 
     if(chan_idx < 0){
 

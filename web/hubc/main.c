@@ -10,11 +10,11 @@ int main(){
 
     srand((unsigned int)time(NULL));
 
-    // sock_listen_and_serve();
-
-    // front_listen_adn_server();
 
     admin_listen_and_serve();
 
+    front_listen_and_server();
+
+    // sock_listen_and_serve();
 
 }

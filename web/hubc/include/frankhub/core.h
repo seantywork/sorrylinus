@@ -77,7 +77,7 @@
 # define HUB_CA_CERT "tls/ca.crt"
 #endif
 
-
+#define DEFAULT_RANDLEN 64
 //#define WAIT 7   
 
 
