@@ -76,7 +76,7 @@
 #define HOST_FULL_ADDRESS_CLIENT "tcp://feebdaed.xyz:3000"
 #else
 #define HOST_FULL_ADDRESS "tcp://frankhub:2999"
-#define HOST_FULL_ADDRESS_CLIENT "tcp://feebdaed.xyz:3000"
+#define HOST_FULL_ADDRESS_CLIENT "tcp://frankhub:3000"
 #endif
 
 

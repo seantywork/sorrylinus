@@ -18,4 +18,6 @@ RUN make dep-source
 
 RUN	make release
 
-CMD ["./daemon.sh"]
+#CMD ["tail", "-f","/dev/null"]
+
+CMD ["./frankc.out"]

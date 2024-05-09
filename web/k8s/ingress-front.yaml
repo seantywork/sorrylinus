@@ -22,7 +22,7 @@ spec:
           pathType: Prefix
           backend:
             service:
-              name: frankhub-front
+              name: frankthecloud
               port:
                 number: 8000
   - host: "www.feebdaed.xyz"
@@ -32,6 +32,6 @@ spec:
           pathType: Prefix
           backend:
             service:
-              name: frankhub-front
+              name: frankthecloud
               port:
                 number: 8000
