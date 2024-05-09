@@ -17,10 +17,10 @@ INCLUDES := -I./include -I./vendor -I./vendor/mongoose -I./vendor/cJSON
 LIBS := -lpthread -lcurl
 
 
-OBJS := f_core.o
-OBJS += f_admin.o
+OBJS := f_admin.o
+OBJS += f_utils.o
 OBJS += f_controller.o
-
+OBJS += f_controller_client.o
 
 DEP_OBJS := mongoose.o
 DEP_OBJS += cJSON.o
@@ -52,19 +52,23 @@ release: $(OBJS) $(DEP_OBJS)
 
 	gcc $(GCC_REL_FLAGS) $(INCLUDES) -o frankc.out main.c $(OBJS) $(DEP_OBJS) $(LIBS) 
 
-f_core.o:
-
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_core.o main_core.c 
-
-
 f_admin.o:
 
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_admin.o main_admin.c 
 
+f_utils.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_utils.o main_utils.c 
 
 f_controller.o:
 
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_controller.o controller/index.c 
+
+
+f_controller_client.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o f_controller_client.o controller/client.c 
+
 
 
 mongoose.o:

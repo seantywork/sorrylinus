@@ -7,7 +7,7 @@
 
 
 
-void sock_listen_and_serve();
+void sock_listen_and_serve(void* varg);
 
 
 void sock_handle_conn();

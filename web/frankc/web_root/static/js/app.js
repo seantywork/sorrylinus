@@ -1,5 +1,6 @@
 
 REQ_KEY = ""
+
 var CAT = 0
 
 
@@ -10,9 +11,18 @@ async function FrankHealth(){
     
     let resp_data = resp.data
 
-    message = resp_data['message']
+    if(resp_data.status != 'SUCCESS'){
+ 
+      alert('failed to get health: ' + resp_data.data)
+ 
+    } else {
+ 
+      message = resp_data.data
 
-    RenderOutput('frank-health',message)
+      RenderOutput('frank-health',message)
+
+    }
+
 
 }
 
@@ -24,7 +34,7 @@ async function SignOut(){
 
     var resp_data = resp.data
 
-    message = resp_data['message']
+    message = resp_data.status
 
     if(message != 'SUCCESS'){
       alert('sign out failed')
@@ -87,3 +97,24 @@ function getCookie(name) {
     return null
   }
 }
+
+
+
+async function _channel_init(){
+
+
+  FRONT_WS = FrontWSInit()
+
+  console.log('front web socket ready')
+
+  await Delay(1000)
+  
+
+  REQ_KEY = getCookie("access_token")
+
+
+  console.log("ready commmunication")
+
+}
+
+_channel_init()

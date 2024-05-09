@@ -15,6 +15,7 @@ LIBS := -lpthread -lssl -lcrypto
 
 OBJS := fhub_core.o
 OBJS += fhub_admin.o
+OBJS += fhub_utils.o
 OBJS += fhub_sock_v1.o
 OBJS += fhub_front_v1.o
 
@@ -46,6 +47,12 @@ fhub_core.o:
 fhub_admin.o:
 
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_admin.o main_admin.c 
+
+fhub_utils.o:
+
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_utils.o main_utils.c 
+
 
 fhub_sock_v1.o:
 

@@ -1,4 +1,5 @@
 #include "frank/controller/index.h"
+#include "frank/controller/client.h"
 
 
 struct user user_array[MAX_USERS];
@@ -437,12 +438,75 @@ int add_ticket(struct mg_http_message *hm, char* name, char* new_pass){
 
     }
 
+    result = client_connect(result_idx);
+
+    if(result < 0){
+
+        printf("failed to add ticket: connect to front\n");
+
+        return -3;
+
+    }
+
+
+    uint8_t header[HUB_HEADER_BYTELEN]= {0};
+    uint64_t body_len = 0;
+    int flag = 0;
+    uint8_t* rbuff;
+    uint8_t wbuff[MAX_BUFF] = {0};
+
+
+    strcpy(header, HUB_HEADER_AUTHFRONT);
+
+    strcat(wbuff, name);
+    strcat(wbuff, ":");
+    strcat(wbuff, new_pass);
+
+    body_len = strlen(wbuff) + 1;
+
+
+    result = client_write_packet(result_idx, header, body_len, wbuff);
+
+    if(result < 0){
+
+        printf("failed to add ticket: send auth to front\n");
+
+        return -4;
+    
+    }
+
+    memset(header, 0, HUB_HEADER_BYTELEN);
+
+    body_len = 0;
+
+    rbuff = client_read_packet(result_idx, header, &body_len, &flag);
+
+    if(flag <= 0){
+
+        printf("failed to add ticket: read auth from front: %d\n", flag);
+
+        return -5;
+
+    }
+
+    printf("auth result: %s\n", rbuff);
+
+    if(strcmp(rbuff, "SUCCESS")!=0){
+
+        printf("failed to add ticket: auth failed: %s\n", rbuff);
+
+        free(rbuff);
+
+        return -6;
+
+    }
+
+
     strcpy(user_array[result_idx].name, name);
 
     strcpy(user_array[result_idx].pass, new_pass);
 
     user_array[result_idx].ticket = 1;
-
 
     return 1;
 }
@@ -613,6 +677,52 @@ void handle_goauth2_login(struct mg_connection *c, struct mg_http_message *hm) {
 
 }
 
+
+void handle_healtiness_probe(struct mg_connection *c, struct mg_http_message *hm){
+
+    char* ticket[MAX_USER_PASS] = {0};
+
+    char rest_buff[MAX_REST_BUFF] = {0};
+
+
+    cJSON* response = cJSON_CreateObject();
+
+    int datalen = 0;
+
+
+    int result = get_ticket(hm, ticket);
+
+
+    if(result < 0){
+        printf("failed to get ticket\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+
+        strcpy(rest_buff, cJSON_Print(response));
+
+        datalen = strlen(rest_buff);
+
+        mg_http_reply(c, 403, "", rest_buff);
+
+        return;
+
+    }
+
+    cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+    cJSON_AddItemToObject(response, "data", cJSON_CreateString("fine"));
+
+    strcpy(rest_buff, cJSON_Print(response));
+
+    datalen = strlen(rest_buff);
+
+    mg_http_reply(c, 200, "", rest_buff);
+
+
+
+}
+
+
 void handle_goauth2_login_callback(struct mg_connection *c, struct mg_http_message *hm) {
 
     char request_uri[MAX_REQUEST_URI_LEN] = {0};
@@ -746,13 +856,26 @@ void handle_logout(struct mg_connection *c, struct mg_http_message *hm) {
 
     char header[MAX_REQUEST_URI_LEN] = {0};
 
+    char rest_buff[MAX_REST_BUFF] = {0};
+
     int user_idx = get_session_status(hm);
+
+    int datalen = 0;
+
+    cJSON* response = cJSON_CreateObject();
 
     if(user_idx < 0){
 
         printf("not a connection to logout\n");
 
-        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+
+        strcpy(rest_buff, cJSON_Print(response));
+
+        datalen = strlen(rest_buff);
+
+        mg_http_reply(c, 403, "", rest_buff);
 
         return;
 
@@ -762,7 +885,14 @@ void handle_logout(struct mg_connection *c, struct mg_http_message *hm) {
 
         printf("no valid ticket to remove \n");
 
-        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+
+        strcpy(rest_buff, cJSON_Print(response));
+
+        datalen = strlen(rest_buff);
+
+        mg_http_reply(c, 403, "", rest_buff);
 
         return;
 
@@ -774,7 +904,14 @@ void handle_logout(struct mg_connection *c, struct mg_http_message *hm) {
 
         printf("failed to remove ticket\n");
 
-        mg_http_reply(c, 500, "","%m", MG_ESC("internal error"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+
+        strcpy(rest_buff, cJSON_Print(response));
+
+        datalen = strlen(rest_buff);
+
+        mg_http_reply(c, 500, "", rest_buff);
 
         return;
 
@@ -786,7 +923,14 @@ void handle_logout(struct mg_connection *c, struct mg_http_message *hm) {
 
         printf("failed to remove ticket\n");
 
-        mg_http_reply(c, 500, "","%m", MG_ESC("internal error"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+
+        strcpy(rest_buff, cJSON_Print(response));
+
+        datalen = strlen(rest_buff);
+
+        mg_http_reply(c, 500, "", rest_buff);
 
         return;
 
@@ -802,9 +946,14 @@ void handle_logout(struct mg_connection *c, struct mg_http_message *hm) {
     mg_snprintf(header, sizeof(header),"%s", cookie);
     
 
-    mg_http_reply(c, 200, header,"{%m:%m}", MG_ESC("message"), MG_ESC("SUCCESS"));
+    cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+    cJSON_AddItemToObject(response, "data", cJSON_CreateString("SUCCESS"));
 
+    strcpy(rest_buff, cJSON_Print(response));
 
+    datalen = strlen(rest_buff);
+
+    mg_http_reply(c, 200, header, rest_buff);
 }
 
 
@@ -826,6 +975,177 @@ void handle_web_root(struct mg_connection *c, struct mg_http_message *hm) {
 
 
 }
+
+
+size_t req_write_callback(void *data, size_t size, size_t nmemb, void *clientp)
+{
+    size_t realsize = size * nmemb;
+
+    memcpy(clientp, data, realsize);
+
+    return realsize;
+}
+
+int request_post_code(char* result, char* req_url, char* code){
+
+    //const char* c_req_url = req_url.c_str();
+
+    CURL *curl;
+    CURLcode res;
+
+    char post_fields[MAX_POST_FIELDS_LEN] = {0};
+
+
+    strcat(post_fields, "code=");
+    strcat(post_fields, code);
+    strcat(post_fields, "&");
+    
+    strcat(post_fields, "client_id=");
+    strcat(post_fields, GOOGLE_CLIENT_ID);
+    strcat(post_fields, "&");
+
+    strcat(post_fields, "client_secret=");
+    strcat(post_fields, GOOGLE_CLIENT_SECRET);
+    strcat(post_fields, "&");
+
+    strcat(post_fields, "redirect_uri=");
+    strcat(post_fields, OAUTH_REDIRECT_URI);
+    strcat(post_fields, "&");
+
+    strcat(post_fields, "grant_type=authorization_code");
+
+    curl = curl_easy_init();
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, req_url);
+        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,post_fields);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_write_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)result);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK){
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
+        }
+        curl_easy_cleanup(curl);
+
+    } else {
+        strcpy(result,"curl init failed");
+        return -1;
+    }
+
+
+    return 0;
+}
+
+int request_get_url(char* result, char* req_url){
+
+    //const char* c_req_url = req_url.c_str();
+
+    CURL *curl;
+    CURLcode res;
+
+
+    curl = curl_easy_init();
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, req_url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_write_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, result);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK){
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
+        }
+        curl_easy_cleanup(curl);
+
+    } else {
+        strcpy(result, "curl init failed");
+        return -1;
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+size_t print_int_arr(void (*out)(char, void *), void *ptr, va_list *ap) {
+  size_t i, len = 0, num = va_arg(*ap, size_t);  // Number of items in the array
+  int *arr = va_arg(*ap, int *);              // Array ptr
+  for (i = 0; i < num; i++) {
+    len += mg_xprintf(out, ptr, "%s%d", i == 0 ? "" : ",", arr[i]);
+  }
+  return len;
+}
+
+size_t print_status(void (*out)(char, void *), void *ptr, va_list *ap) {
+  int fw = va_arg(*ap, int);
+  return mg_xprintf(out, ptr, "{%m:%d,%m:%c%lx%c,%m:%u,%m:%u}\n",
+                    MG_ESC("status"), mg_ota_status(fw), MG_ESC("crc32"), '"',
+                    mg_ota_crc32(fw), '"', MG_ESC("size"), mg_ota_size(fw),
+                    MG_ESC("timestamp"), mg_ota_timestamp(fw));
+}
+
+
+
+void route(struct mg_connection *c, int ev, void *ev_data) {
+  
+  if (ev == MG_EV_ACCEPT) {
+  
+    if (c->fn_data != NULL) {  
+      struct mg_tls_opts opts = {0};
+      opts.cert = mg_unpacked("/certs/server_cert.pem");
+      opts.key = mg_unpacked("/certs/server_key.pem");
+      mg_tls_init(c, &opts);
+    }
+  
+  } else if (ev == MG_EV_HTTP_MSG) {
+
+    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
+
+    if (mg_match(hm->uri, mg_str("/test/frank-health"), NULL)) {
+
+        handle_healtiness_probe(c, hm);
+
+    } else if (mg_match(hm->uri, mg_str("/oauth2/google/login"), NULL)) {
+
+        handle_goauth2_login(c, hm);
+
+    } else if (mg_match(hm->uri, mg_str("/oauth2/google/callback"), NULL)) {
+
+        handle_goauth2_login_callback(c, hm);
+
+    } else if (mg_match(hm->uri, mg_str("/signout"), NULL)) {
+
+        handle_logout(c, hm);
+
+    } else if (mg_match(hm->uri, mg_str("/front-client"), NULL)){
+
+        printf("WS UPGRADE!!!!!\n");
+
+        mg_ws_upgrade(c, hm, NULL);
+
+
+    }  else {
+
+        handle_web_root(c, hm);
+    }
+    if(DEBUG_THIS == 1){
+
+        MG_DEBUG(("%lu %.*s %.*s -> %.*s", c->id, (int) hm->method.len,
+                hm->method.buf, (int) hm->uri.len, hm->uri.buf, (int) 3,
+                &c->send.buf[9]));
+
+    }
+  } else if (ev == MG_EV_WS_MSG) {
+
+    struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
+    
+    ws_handler(c, wm);
+
+  }
+}
+
+
 
 
 void ws_handler(struct mg_connection *c, struct mg_ws_message *wm){
@@ -990,6 +1310,86 @@ void ws_handler(struct mg_connection *c, struct mg_ws_message *wm){
 
         mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);   
 
+    } else if (strcmp(ws_command, WS_COMMAND_ROUNDTRIP) == 0) {
+
+        printf("roundtrip\n");
+
+        cJSON* rt_data = cJSON_GetObjectItemCaseSensitive(req_obj, "data");
+
+        if(rt_data == NULL){
+
+            printf("failed handle ws: no data field\n");
+
+            cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+            cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+            
+            strcpy(ws_buff, cJSON_Print(response));
+
+            datalen = strlen(ws_buff);
+
+            mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+            
+            return;
+
+        }
+
+        int rt_data_len = strlen(rt_data->valuestring);
+
+        if(rt_data_len > WS_MAX_COMMAND_DATA_LEN){
+
+            printf("failed handle ws: data len too long\n");
+
+            cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+            cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+            
+            strcpy(ws_buff, cJSON_Print(response));
+
+            datalen = strlen(ws_buff);
+
+            mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+            
+            return;
+
+        }
+
+        int uidx = ticket_result;
+
+        int recv_len = 0;
+
+        uint8_t header[HUB_HEADER_BYTELEN] = {0};
+        uint64_t body_len = rt_data_len;
+        uint8_t recv_buff[WS_MAX_COMMAND_RECV_LEN] = {0};
+
+        int rt_result = client_exchange(uidx, &recv_len, recv_buff, body_len, rt_data->valuestring);
+
+        if(rt_result < 0){
+            printf("failed handle ws: exchange failed\n");
+
+            cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+            cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
+            
+            strcpy(ws_buff, cJSON_Print(response));
+
+            datalen = strlen(ws_buff);
+
+            mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+            
+            return;
+
+        }
+
+        printf("exchange success\n");
+
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+        cJSON_AddItemToObject(response, "data", cJSON_CreateString(recv_buff));
+        
+        strcpy(ws_buff, cJSON_Print(response));
+
+        datalen = strlen(ws_buff);
+
+        mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+
+
     } else {
 
         printf("failed handle ws: no such command\n");
@@ -1008,175 +1408,6 @@ void ws_handler(struct mg_connection *c, struct mg_ws_message *wm){
     }
     
 }
-
-size_t req_write_callback(void *data, size_t size, size_t nmemb, void *clientp)
-{
-    size_t realsize = size * nmemb;
-
-    memcpy(clientp, data, realsize);
-
-    return realsize;
-}
-
-int request_post_code(char* result, char* req_url, char* code){
-
-    //const char* c_req_url = req_url.c_str();
-
-    CURL *curl;
-    CURLcode res;
-
-    char post_fields[MAX_POST_FIELDS_LEN] = {0};
-
-
-    strcat(post_fields, "code=");
-    strcat(post_fields, code);
-    strcat(post_fields, "&");
-    
-    strcat(post_fields, "client_id=");
-    strcat(post_fields, GOOGLE_CLIENT_ID);
-    strcat(post_fields, "&");
-
-    strcat(post_fields, "client_secret=");
-    strcat(post_fields, GOOGLE_CLIENT_SECRET);
-    strcat(post_fields, "&");
-
-    strcat(post_fields, "redirect_uri=");
-    strcat(post_fields, OAUTH_REDIRECT_URI);
-    strcat(post_fields, "&");
-
-    strcat(post_fields, "grant_type=authorization_code");
-
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, req_url);
-        curl_easy_setopt(curl,CURLOPT_POSTFIELDS,post_fields);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)result);
-        res = curl_easy_perform(curl);
-        if(res != CURLE_OK){
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
-        }
-        curl_easy_cleanup(curl);
-
-    } else {
-        strcpy(result,"curl init failed");
-        return -1;
-    }
-
-
-    return 0;
-}
-
-int request_get_url(char* result, char* req_url){
-
-    //const char* c_req_url = req_url.c_str();
-
-    CURL *curl;
-    CURLcode res;
-
-
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, req_url);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, result);
-        res = curl_easy_perform(curl);
-        if(res != CURLE_OK){
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
-        }
-        curl_easy_cleanup(curl);
-
-    } else {
-        strcpy(result, "curl init failed");
-        return -1;
-    }
-
-    return 0;
-}
-
-
-
-
-
-
-
-size_t print_int_arr(void (*out)(char, void *), void *ptr, va_list *ap) {
-  size_t i, len = 0, num = va_arg(*ap, size_t);  // Number of items in the array
-  int *arr = va_arg(*ap, int *);              // Array ptr
-  for (i = 0; i < num; i++) {
-    len += mg_xprintf(out, ptr, "%s%d", i == 0 ? "" : ",", arr[i]);
-  }
-  return len;
-}
-
-size_t print_status(void (*out)(char, void *), void *ptr, va_list *ap) {
-  int fw = va_arg(*ap, int);
-  return mg_xprintf(out, ptr, "{%m:%d,%m:%c%lx%c,%m:%u,%m:%u}\n",
-                    MG_ESC("status"), mg_ota_status(fw), MG_ESC("crc32"), '"',
-                    mg_ota_crc32(fw), '"', MG_ESC("size"), mg_ota_size(fw),
-                    MG_ESC("timestamp"), mg_ota_timestamp(fw));
-}
-
-
-
-void route(struct mg_connection *c, int ev, void *ev_data) {
-  
-  if (ev == MG_EV_ACCEPT) {
-  
-    if (c->fn_data != NULL) {  
-      struct mg_tls_opts opts = {0};
-      opts.cert = mg_unpacked("/certs/server_cert.pem");
-      opts.key = mg_unpacked("/certs/server_key.pem");
-      mg_tls_init(c, &opts);
-    }
-  
-  } else if (ev == MG_EV_HTTP_MSG) {
-
-    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-
-    if (mg_match(hm->uri, mg_str("/test/frank-health"), NULL)) {
-
-        mg_http_reply(c, 200, "", "{%m:%m}", MG_ESC("message"), MG_ESC("fine"));
-
-    } else if (mg_match(hm->uri, mg_str("/oauth2/google/login"), NULL)) {
-
-        handle_goauth2_login(c, hm);
-
-    } else if (mg_match(hm->uri, mg_str("/oauth2/google/callback"), NULL)) {
-
-        handle_goauth2_login_callback(c, hm);
-
-    } else if (mg_match(hm->uri, mg_str("/signout"), NULL)) {
-
-        handle_logout(c, hm);
-
-    } else if (mg_match(hm->uri, mg_str("/front-client"), NULL)){
-
-        printf("WS UPGRADE!!!!!\n");
-
-        mg_ws_upgrade(c, hm, NULL);
-
-
-    }  else {
-
-        handle_web_root(c, hm);
-    }
-    if(DEBUG_THIS == 1){
-
-        MG_DEBUG(("%lu %.*s %.*s -> %.*s", c->id, (int) hm->method.len,
-                hm->method.buf, (int) hm->uri.len, hm->uri.buf, (int) 3,
-                &c->send.buf[9]));
-
-    }
-  } else if (ev == MG_EV_WS_MSG) {
-
-    struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
-    
-    ws_handler(c, wm);
-
-  }
-}
-
 
 
 void frankc_listen_and_serve(){

@@ -8,7 +8,7 @@ extern "C" {
 
 #include "sorrylinus/soli.h"
 
-
+#define SOLI_TESTUNAME "test-uname"
 
 
 

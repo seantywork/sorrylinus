@@ -1,4 +1,5 @@
 #include "sorrylinus/sock/v1.h"
+#include "sorrylinus/modules/info/v1.h"
 
 SSL_CTX* ctx = NULL;
 BIO *web = NULL; 
@@ -463,7 +464,10 @@ int hubc_communicate(){
         rbuff = hubc_read_packet(header, &body_len, &flag);
 
         if(flag <= 0){
-            printf("noting to read...\n");
+            printf("nothing to read...\n");
+            
+            terminate = 1;
+
             continue;
 
         }
@@ -489,17 +493,39 @@ int hubc_communicate(){
 
     }
 
+    return 0;
+
 
 }
 
 
-uint8_t* hubc_handle(uint64_t command_len, uint8_t* command, int flag){
+uint8_t* hubc_handle(uint64_t command_len, uint8_t* command, int* flag){
 
     uint8_t* body;
     
-    printf("read: %d\n", command_len);
+    if(strcmp(command, SOLI_TESTUNAME) == 0){
 
-    printf("%s\n", command);
+        *flag = 1024;
+        
+        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
+
+        memset(body, 0, (*flag) * sizeof(uint8_t));
+
+        info_uname(body);
+
+
+    } else {
+
+        *flag = strlen("no such command") + 1;
+
+        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
+
+        memset(body, 0, (*flag) * sizeof(uint8_t));
+
+        strcpy(body, "no such command");
+
+    }
+
 
     return body;
 }

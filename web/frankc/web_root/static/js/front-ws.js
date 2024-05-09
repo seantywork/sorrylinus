@@ -6,7 +6,8 @@ var WS_READ_CHANNEL = {}
 
 var REQUEST = {
     "access_token":"",
-    "command": ""
+    "command": "",
+    "data": ""
 }
 
 var RESPONSE = {
@@ -130,37 +131,79 @@ async function RequestKey(){
 
             alert("get req key timed out")
 
+            return -1;
+
 
         } else {
 
-            
             var recv_data = JSON.parse(WS_READ_CHANNEL)
 
             if(recv_data.status != "FAIL"){
+                
                 console.log("got req key")
             
                 REQ_KEY = recv_data.data
 
-                return
+                return 1
+
             } else {
-                console.log("failed to get req key")
+
+                alert("failed to get req key")
+           
+                return -2
+                
             }
         }
 
     }
 }
 
-async function WSmain(){
 
-    FRONT_WS = FrontWSInit()
 
-    console.log('front web socket ready')
+async function SoliQuery(sock_query_el){
 
-    await Delay(3000)
-    
-    await RequestKey()
+    let target_el = '#' + sock_query_el
+
+    let sock_query = $(target_el).val()
+
+    if(!sock_query){
+        alert('feed correct query')
+        return
+    }
+
+
+    let req = JSON.parse(JSON.stringify(REQUEST))
+
+    req.access_token = REQ_KEY
+    req.command = "ROUNDTRIP"
+    req.data = sock_query
+
+
+    WS_READ_CHANNEL = ""
+
+    FRONT_WS.send(JSON.stringify(req))
+
+    let ret_signal = await CheckWSReadChannelWithTimeOut(10000)
+
+    if (ret_signal < 0){
+
+        alert("failed to recv")
+
+        return
+    }
+
+    await Delay(100)
+
+    let result = JSON.parse(WS_READ_CHANNEL)
+
+    if(result.status != "SUCCESS"){
+        RenderOutput(sock_query, "failed")
+
+    } else {
+
+        RenderOutput(sock_query, result.data)
+    }
+
+
 
 }
-
-
-WSmain()

@@ -13,30 +13,71 @@
 #include <sys/types.h> 
 #include <unistd.h> 
 #include <time.h>
+#include <sys/time.h>
 #include <endian.h>
 #include <pthread.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <errno.h>
 
 #define DEBUG_THIS 0
 #define DEBUG_LOCAL 1
 
+#define TIMEOUT_SEC 5
+#define TIMEOUT_MS TIMEOUT_SEC * 1000
 
+#define HUB_WORD           8
+#define HUB_HEADER_BYTELEN HUB_WORD * 3
+#define HUB_BODY_BYTELEN   HUB_WORD * 1
+#define HUB_BODY_BYTEMAX   HUB_WORD * 1280 //10KB
+#define HUB_TIMEOUT_MS 5000
+#define HUB_HEADER_AUTHSOCK "AUTHSOCK"
+#define HUB_HEADER_AUTHFRONT "AUTHFRONT"
+#define HUB_HEADER_AUTHFRANK "AUTHFRANK"
+#define HUB_HEADER_SENDSOCK "SENDSOCK"
+#define HUB_HEADER_RECVSOCK "RECVSOCK"
+#define HUB_HEADER_SENDFRONT "SENDFRONT"
+#define HUB_HEADER_RECVFRONT "RECVFRONT"
+#define HUB_HEADER_SENDFRANK "SENDFRANK"
+#define HUB_HEADER_RECVFRANK "RECVFRANK"
+
+#define TRUE 1
+#define FALSE 0
+#define MAX_BUFF HUB_BODY_BYTEMAX
+#define MAX_CONN 80
 #define MAX_ID_LEN 1024
 #define MAX_PW_LEN 4096
+#define PORT_FRONT 3000
+#define PORT_SOCK 3001 
 
-struct memory {
-  char *response;
-  size_t size;
-};
+
+#define ISSOCK 1
+#define ISFRONT 2
+#define CHAN_ISSOCK 3
+#define CHAN_ISFRONT 4
+
+#define IS_BIG_ENDIAN (!*(unsigned char *)&(uint16_t){1})
+
+#if __BIG_ENDIAN__
+# define htonll(x) (x)
+# define ntohll(x) (x)
+#else
+# define htonll(x) (((uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+# define ntohll(x) (((uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+#endif
+
+
+#if DEBUG_LOCAL
+#define HOST_FULL_ADDRESS "tcp://feebdaed.xyz:2999"
+#define HOST_FULL_ADDRESS_CLIENT "tcp://feebdaed.xyz:3000"
+#elif
+#define HOST_FULL_ADDRESS "tcp://frankhub:2999"
+#define HOST_FULL_ADDRESS_CLIENT "tcp://feebdaed.xyz:3000"
+#endif
+
 
 extern int s_sig_num;
-
-int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path);
-
-int gen_random_bytestream(uint8_t* bytes, size_t num_bytes);
-
-int bin2hex(uint8_t* hexarray, int arrlen, uint8_t* bytearray);
-
-
 
 
 #endif

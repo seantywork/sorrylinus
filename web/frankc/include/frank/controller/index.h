@@ -46,16 +46,25 @@
 #define MAX_CODELEN 256
 #define GOAUTH_TOKENLEN 512
 
-#define MAX_BUFF 1024 * 10 * 10
+#define MAX_REST_BUFF 1024 * 10
 #define MAX_WS_BUFF 1024 * 10
 
 #define WS_MAX_COMMAND_LEN 32
-#define WS_COMMAND_REQ_KEY "REQ_KEY"
+#define WS_MAX_COMMAND_DATA_LEN WS_MAX_COMMAND_LEN * 8
+#define WS_MAX_COMMAND_RECV_LEN WS_MAX_COMMAND_LEN * 8 * 8
 
+#define WS_COMMAND_REQ_KEY "REQ_KEY"
+#define WS_COMMAND_ROUNDTRIP "ROUNDTRIP"
 
 #define GOAUTH_USER_INFO_API "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
 
 #define DEFAULT_RANDLEN 64
+
+struct memory {
+  char *response;
+  size_t size;
+};
+
 
 struct ui_event {
   uint8_t type, prio;
@@ -71,6 +80,8 @@ struct user {
     char name[MAX_USER_NAME]; 
     char access_token[MAX_USER_ACCESS_TOKEN];
     char pass[MAX_USER_PASS]; 
+
+    int cfd;
 };
 
 struct settings {
@@ -89,7 +100,6 @@ extern char *s_json_header;
 extern struct mg_mgr mgr;
 
 extern struct user user_array[MAX_USERS];
-
 
 
 extern char GOOGLE_AUTH_ENDPOINT[MAX_REQUEST_URI_LEN];
@@ -123,6 +133,10 @@ int del_ticket(struct mg_http_message *hm);
 
 int get_ticket_ws(char* token, char* ticket);
 
+
+
+void handle_healtiness_probe(struct mg_connection *c, struct mg_http_message *hm);
+
 void handle_goauth2_login(struct mg_connection *c, struct mg_http_message *hm);
 
 void handle_goauth2_login_callback(struct mg_connection *c, struct mg_http_message *hm);
@@ -130,9 +144,6 @@ void handle_goauth2_login_callback(struct mg_connection *c, struct mg_http_messa
 void handle_logout(struct mg_connection *c, struct mg_http_message *hm);
 
 void handle_web_root(struct mg_connection *c, struct mg_http_message *hm);
-
-
-void ws_handler(struct mg_connection *c, struct mg_ws_message *wm);
 
 size_t req_write_callback(void *data, size_t size, size_t nmemb, void *clientp);
 
@@ -147,6 +158,10 @@ size_t print_int_arr(void (*out)(char, void *), void *ptr, va_list *ap);
 size_t print_status(void (*out)(char, void *), void *ptr, va_list *ap);
 
 void route(struct mg_connection *c, int ev, void *ev_data);
+
+
+
+void ws_handler(struct mg_connection *c, struct mg_ws_message *wm);
 
 
 void frankc_listen_and_serve();

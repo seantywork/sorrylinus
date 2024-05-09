@@ -1,4 +1,5 @@
 #include   "frankhub/sock/v1.h"
+#include   "frankhub/utils.h"
 
 int SOCK_FD;
 int SOCK_SERVLEN;
@@ -6,9 +7,9 @@ int SOCK_EPLFD;
 struct epoll_event SOCK_EVENT;
 struct epoll_event *SOCK_EVENTARRAY;
 
+char CA_CERT[MAX_PW_LEN] = {0};
 
-
-void sock_listen_and_serve(){
+void sock_listen_and_serve(void* varg){
 
     int result = 0;
 
@@ -18,7 +19,7 @@ void sock_listen_and_serve(){
 
     if(result < 0){
 
-        printf("failed to read ca cert\n");
+        fmt_logln(LOGFP, "failed to read ca cert");
 
         return;
 
@@ -42,11 +43,14 @@ void sock_listen_and_serve(){
     SOCK_FD = socket(AF_INET, SOCK_STREAM, 0); 
 
     if (SOCK_FD == -1) { 
-        printf("socket creation failed\n"); 
+
+        fmt_logln(LOGFP, "socket creation failed");
+
         exit(EXIT_FAILURE); 
     } 
     else {
-        printf("socket successfully created\n"); 
+
+        fmt_logln(LOGFP, "socket successfully created");
     }
     /*
     if( setsockopt(SOCKFD, SOL_SOCKET, SO_REUSEADDR, (char *)&OPT,  
@@ -66,18 +70,25 @@ void sock_listen_and_serve(){
     SERVADDR.sin_port = htons(PORT_SOCK); 
    
     if ((bind(SOCK_FD, (struct sockaddr*)&SERVADDR, sizeof(SERVADDR))) != 0) { 
-        printf("socket bind failed\n"); 
+        
+
+        fmt_logln(LOGFP, "socket bind failed");
+
         exit(EXIT_FAILURE); 
     } 
     
     if(make_socket_non_blocking(SOCK_FD) < 0){
-        printf("non-blocking failed\n");
+
+        fmt_logln(LOGFP, "non-blocking failed");
+
         exit(EXIT_FAILURE);
     }
     
 
     if ((listen(SOCK_FD, MAX_CONN)) != 0) { 
-        printf("listen failed\n"); 
+
+        fmt_logln(LOGFP, "listen failed");
+
         exit(EXIT_FAILURE); 
     } 
     else{
@@ -88,7 +99,9 @@ void sock_listen_and_serve(){
     SOCK_EPLFD = epoll_create1(0);
 
     if(SOCK_EPLFD == -1){
-        printf("epoll creation failed \n");
+
+        fmt_logln(LOGFP, "epoll creation failed");
+
         exit(EXIT_FAILURE);
     }
 
@@ -96,7 +109,9 @@ void sock_listen_and_serve(){
     SOCK_EVENT.events = EPOLLIN | EPOLLET;
     
     if (epoll_ctl(SOCK_EPLFD, EPOLL_CTL_ADD, SOCK_FD, &SOCK_EVENT) < 0){
-        printf("epoll add failed\n");
+
+        fmt_logln(LOGFP,"epoll add failed");
+
         exit(EXIT_FAILURE);
     }    
 
@@ -117,21 +132,23 @@ void sock_listen_and_serve(){
                 (!(SOCK_EVENTARRAY[i].events & EPOLLIN))
             ){
 
-                printf("epoll wait error \n");
+                fmt_logln(LOGFP, "epoll wait error");
+
                 close(SOCK_EVENTARRAY[i].data.fd);
+                
                 continue;
 
             } else if (SOCK_FD == SOCK_EVENTARRAY[i].data.fd){
 
                 sock_handle_conn();
 
-                printf("new conn successfully handled\n");
+                fmt_logln(LOGFP, "new sock conn successfully handled");
 
             } else{
 
                 sock_handle_client(SOCK_EVENTARRAY[i].data.fd);
 
-                printf("socket data successfully handled\n");
+                fmt_logln(LOGFP, "socket data successfully handled");
 
 
             }
@@ -178,12 +195,15 @@ void sock_handle_conn(){
                 (errno == EAGAIN) ||
                 (errno == EWOULDBLOCK)
             ){
-                printf("all incoming sock connections handled\n");
+
+                fmt_logln(LOGFP, "all incoming sock connections handled");
+
                 break;
 
             } else{
+ 
+                fmt_logln(LOGFP, "error handling incoming sock connection");
 
-                printf("error handling incoming sock connection\n");
                 break;
             }
         }
@@ -200,18 +220,26 @@ void sock_handle_conn(){
 
             int sslerr =  SSL_get_error(ssl, 0);
 
-            printf("error handling tls handshake\n");
+            fmt_logln(LOGFP, "error handling tls handshake");
 
             if (ssl_accept_ret <=0 && (sslerr == SSL_ERROR_WANT_READ)) {
 
                 perror ("Need to wait until socket is readable.");
 
+                fmt_logln(LOGFP, "ssl: %s", "Need to wait until socket is readable");
+
             } else if (ssl_accept_ret <=0 && (sslerr == SSL_ERROR_WANT_WRITE)) {
 
                 perror ("Need to wait until socket is writable.");
 
+                fmt_logln(LOGFP, "ssl: %s", "Need to wait until socket is writable");
+
+
             } else {
                 perror ("Need to wait until socket is ready.");
+
+                fmt_logln(LOGFP, "ssl: %s", "Need to wait until socket is ready");
+
             }
 
             shutdown (infd, 2);
@@ -224,7 +252,9 @@ void sock_handle_conn(){
 
 
         if(make_socket_non_blocking(infd) < 0){
-            printf("failed new conn non block\n");
+
+            fmt_logln(LOGFP, "failed new conn non block");
+
             exit(EXIT_FAILURE);
         }
 
@@ -234,7 +264,8 @@ void sock_handle_conn(){
 
         if(sock_idx < 0){
 
-            printf("failed new conn sockctx\n");
+            fmt_logln(LOGFP, "failed new conn sockctx");
+
             exit(EXIT_FAILURE);
 
         }
@@ -248,12 +279,14 @@ void sock_handle_conn(){
 
         if (epoll_ctl(SOCK_EPLFD, EPOLL_CTL_ADD, infd, &SOCK_EVENT) < 0){
 
-            printf("handle epoll add failed\n");
+            fmt_logln(LOGFP,"handle epoll add failed");  
+
+
             exit(EXIT_FAILURE);
 
         }  else {
 
-            printf("handle epoll add success\n");
+            fmt_logln(LOGFP,"handle epoll add success"); 
 
         }
 
@@ -270,16 +303,23 @@ void sock_handle_conn(){
 void sock_handle_client(int cfd){
 
 
+    pthread_mutex_lock(&G_MTX);
+
     int chan_idx = get_chanctx_by_fd(cfd, ISSOCK);
+
 
     if(chan_idx < 0){
         
         sock_authenticate(cfd);
 
+        pthread_mutex_unlock(&G_MTX);
+
         return;
     }
 
     sock_communicate(chan_idx);
+
+    pthread_mutex_unlock(&G_MTX);
 
     return;
 
@@ -299,11 +339,11 @@ void sock_authenticate(int cfd){
 
     int sock_idx = get_sockctx_by_fd(cfd);
 
-    printf("not registered to chan ctx, auth\n");
+    fmt_logln(LOGFP,"not registered to chan ctx, auth"); 
 
     if(sock_idx < 0){
 
-        printf("failed to get sock idx\n");
+        fmt_logln(LOGFP,"failed to get sock idx"); 
 
         return;
     }
@@ -317,7 +357,7 @@ void sock_authenticate(int cfd){
     if(hp.flag <= 0){
 
 
-        printf("failed to read sock\n");
+        fmt_logln(LOGFP,"failed to read sock"); 
 
         free_sockctx(sock_idx, 1);
 
@@ -331,7 +371,7 @@ void sock_authenticate(int cfd){
 
     if(verified < 1){
 
-        printf("invalid signature\n");
+        fmt_logln(LOGFP,"invalid signature"); 
 
         free_sockctx(sock_idx, 1);
 
@@ -347,7 +387,7 @@ void sock_authenticate(int cfd){
 
     if(ret_cn != 1){
 
-        printf("invalid id\n");
+        fmt_logln(LOGFP,"invalid id"); 
 
         free_sockctx(sock_idx, 1);
 
@@ -358,7 +398,7 @@ void sock_authenticate(int cfd){
 
     }
 
-    printf("id: %s\n", id);
+    fmt_logln(LOGFP, "id: %s", id);
 
     free(hp.rbuff);
 
@@ -366,7 +406,7 @@ void sock_authenticate(int cfd){
 
     if (chan_idx < 0){
 
-        printf("failed to update chanctx\n");
+        fmt_logln(LOGFP, "failed to update chanctx");
 
         free_sockctx(sock_idx, 1);
 
@@ -375,7 +415,7 @@ void sock_authenticate(int cfd){
     }
 
 
-    uint64_t body_len = (uint64_t)(strlen("SUCCESS") + 1);
+    uint64_t body_len = strlen("SUCCESS") + 1;
 
     memset(hp.header, 0, HUB_HEADER_BYTELEN);
 
@@ -391,19 +431,19 @@ void sock_authenticate(int cfd){
 
     strcpy(hp.id, id);
 
-    printf("writing...\n");
+    fmt_logln(LOGFP, "writing auth result..");
     
     ctx_write_packet(&hp);
 
     if(hp.flag <= 0){
 
-        printf("failed to send\n");
+        fmt_logln(LOGFP, "failed to send");
 
         return;
 
     }
 
-    printf("sent\n");
+    fmt_logln(LOGFP, "sent");
 
     return;
 
@@ -414,19 +454,19 @@ void sock_authenticate(int cfd){
 
 void sock_communicate(int chan_idx){
 
-    printf("incoming sock communication to front\n");
+    fmt_logln(LOGFP, "incoming sock communication to front");
 
     int frontfd = CHAN_CTX[chan_idx].frontfd;
 
     if(frontfd == 0){
 
-        printf("no front exists for communication\n");
+        fmt_logln(LOGFP, "no front exists for communication");
 
         return;
 
     }
     
-    printf("front exists\n");
+    fmt_logln(LOGFP, "front exists");
 
     struct HUB_PACKET hp;
 
@@ -438,7 +478,7 @@ void sock_communicate(int chan_idx){
 
     if(hp.flag <= 0){
 
-        printf("failed to communicate sock read\n");
+        fmt_logln(LOGFP, "failed to communicate sock read");
 
         return;
 
@@ -462,12 +502,12 @@ void sock_communicate(int chan_idx){
 
     if(hp.flag <= 0){
 
-        printf("failed to send to front\n");
+        fmt_logln(LOGFP, "failed to send to front");
 
         return;
     } 
 
-    printf("sent to front\n");
+    fmt_logln(LOGFP, "send to front");
 
     return;
 }

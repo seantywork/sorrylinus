@@ -4,7 +4,7 @@
 #include "frankhub/core.h"
 
 
-void front_listen_and_serve();
+void front_listen_and_serve(void* varg);
 
 
 void front_handle_conn();

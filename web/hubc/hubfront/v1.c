@@ -1,5 +1,5 @@
 #include   "frankhub/front/v1.h"
-
+#include   "frankhub/utils.h"
 
 int FRONT_FD;
 int FRONT_SERVLEN;
@@ -7,21 +7,23 @@ int FRONT_EPLFD;
 struct epoll_event FRONT_EVENT;
 struct epoll_event *FRONT_EVENTARRAY;
 
-void front_listen_and_serve(){
+void front_listen_and_serve(void* varg){
 
 
     struct sockaddr_in SERVADDR;
 
-
-
     FRONT_FD = socket(AF_INET, SOCK_STREAM, 0); 
 
     if (FRONT_FD == -1) { 
-        printf("socket creation failed\n"); 
+
+        fmt_logln(LOGFP, "socket creation failed");
+
         exit(EXIT_FAILURE); 
     } 
     else {
-        printf("socket successfully created\n"); 
+
+        fmt_logln(LOGFP, "socket successfully created");
+
     }
 
     bzero(&SERVADDR, sizeof(SERVADDR)); 
@@ -31,18 +33,24 @@ void front_listen_and_serve(){
     SERVADDR.sin_port = htons(PORT_FRONT); 
 
     if ((bind(FRONT_FD, (struct sockaddr*)&SERVADDR, sizeof(SERVADDR))) != 0) { 
-        printf("socket bind failed\n"); 
+
+        fmt_logln(LOGFP, "socket bind failed");
+
         exit(EXIT_FAILURE); 
     } 
     
     if(make_socket_non_blocking(FRONT_FD) < 0){
-        printf("non-blocking failed\n");
+
+        fmt_logln(LOGFP, "non-blocking failed");
+
         exit(EXIT_FAILURE);
     }
     
 
     if ((listen(FRONT_FD, MAX_CONN)) != 0) { 
-        printf("listen failed\n"); 
+
+        fmt_logln(LOGFP, "listen failed");
+        
         exit(EXIT_FAILURE); 
     } 
     else{
@@ -54,7 +62,7 @@ void front_listen_and_serve(){
     FRONT_EPLFD = epoll_create1(0);
 
     if(FRONT_EPLFD == -1){
-        printf("epoll creation failed \n");
+        fmt_logln(LOGFP, "epoll creation failed");
         exit(EXIT_FAILURE);
     }
 
@@ -62,7 +70,9 @@ void front_listen_and_serve(){
     FRONT_EVENT.events = EPOLLIN | EPOLLET;
     
     if (epoll_ctl(FRONT_EPLFD, EPOLL_CTL_ADD, FRONT_FD, &FRONT_EVENT) < 0){
-        printf("epoll add failed\n");
+
+        fmt_logln(LOGFP, "epoll add failed");
+
         exit(EXIT_FAILURE);
     }    
 
@@ -83,22 +93,24 @@ void front_listen_and_serve(){
                 (!(FRONT_EVENTARRAY[i].events & EPOLLIN))
             ){
 
-                printf("epoll wait error \n");
-                close(FRONT_EVENTARRAY[i].data.fd);
+                fmt_logln(LOGFP, "epoll wait error");
+
+                close(FRONT_EVENTARRAY[i].data.fd);                
+
                 continue;
 
             } else if (FRONT_FD == FRONT_EVENTARRAY[i].data.fd){
 
                 front_handle_conn();
 
-                printf("new front conn successfully handled\n");
+                fmt_logln(LOGFP, "new front conn successfully handled");
 
             } else{
 
                 front_handle_client(FRONT_EVENTARRAY[i].data.fd);
 
-                printf("front data successfully handled\n");
-
+                fmt_logln(LOGFP, "front data successfully handled");
+                
 
             }
 
@@ -138,19 +150,25 @@ void front_handle_conn(){
                 (errno == EAGAIN) ||
                 (errno == EWOULDBLOCK)
             ){
-                printf("all incoming front connections handled\n");
+             
+                fmt_logln(LOGFP,"all incoming front connections handled");
+
                 break;
 
             } else{
 
-                printf("error handling incoming front connection\n");
+                fmt_logln(LOGFP,"error handling incoming front connection");                
+                
                 break;
             }
         }
 
 
         if(make_socket_non_blocking(infd) < 0){
-            printf("failed new conn non block\n");
+
+            fmt_logln(LOGFP,"failed new conn non block");                
+                            
+
             exit(EXIT_FAILURE);
         }
 
@@ -159,7 +177,9 @@ void front_handle_conn(){
 
         if(front_idx < 0){
 
-            printf("failed new conn sockctx\n");
+
+            fmt_logln(LOGFP,"failed new conn frontctx");                                
+
             exit(EXIT_FAILURE);
 
         }
@@ -170,12 +190,13 @@ void front_handle_conn(){
 
         if (epoll_ctl(FRONT_EPLFD, EPOLL_CTL_ADD, infd, &FRONT_EVENT) < 0){
 
-            printf("handle epoll add failed\n");
+
+            fmt_logln(LOGFP,"handle epoll add failed");  
             exit(EXIT_FAILURE);
 
         }  else {
 
-            printf("handle epoll add success\n");
+            fmt_logln(LOGFP,"handle epoll add success");  
 
         }
 
@@ -187,16 +208,22 @@ void front_handle_conn(){
 
 void front_handle_client(int cfd){
 
+    pthread_mutex_lock(&G_MTX);
+
     int chan_idx = get_chanctx_by_fd(cfd, ISFRONT);
 
     if(chan_idx < 0){
         
         front_authenticate(cfd);
 
+        pthread_mutex_unlock(&G_MTX);
+
         return;
     }
 
     front_communicate(chan_idx);
+
+    pthread_mutex_unlock(&G_MTX);
 
     return;
 
@@ -215,11 +242,13 @@ void front_authenticate(int cfd){
 
     int front_idx = get_frontctx_by_fd(cfd);
 
-    printf("not registered to chan ctx, auth\n");
+    fmt_logln(LOGFP,"not registered to chan ctx, auth"); 
+    
 
     if(front_idx < 0){
 
-        printf("failed to get front idx\n");
+        fmt_logln(LOGFP,"failed to get front idx"); 
+    
 
         return;
     }
@@ -232,7 +261,7 @@ void front_authenticate(int cfd){
 
     if(hp.flag <= 0){
 
-        printf("failed to read front\n");
+        fmt_logln(LOGFP,"failed to read front"); 
 
         free_frontctx(front_idx);
 
@@ -246,7 +275,7 @@ void front_authenticate(int cfd){
 
     if(verified_idx < 0){
 
-        printf("invalid idpw\n");
+        fmt_logln(LOGFP,"invalid idpw"); 
 
         free_frontctx(front_idx);
 
@@ -258,8 +287,7 @@ void front_authenticate(int cfd){
 
     strcpy(id, CHAN_CTX[verified_idx].id);
 
-
-    printf("front id: %s\n", id);
+    fmt_logln(LOGFP,"front id: %s", id); 
 
     free(hp.rbuff);
 
@@ -267,7 +295,7 @@ void front_authenticate(int cfd){
 
     if (chan_idx < 0){
 
-        printf("failed to update chanctx\n");
+        fmt_logln(LOGFP, "failed to update chanctx");
 
         free_frontctx(front_idx);
 
@@ -276,7 +304,7 @@ void front_authenticate(int cfd){
     }
 
 
-    uint64_t body_len = (uint64_t)(strlen("SUCCESS") + 1);
+    uint64_t body_len = strlen("SUCCESS") + 1;
 
     memset(hp.header, 0, HUB_HEADER_BYTELEN);
 
@@ -292,19 +320,19 @@ void front_authenticate(int cfd){
 
     strcpy(hp.id, id);
 
-    printf("writing...\n");
+    fmt_logln(LOGFP, "writing auth result..");
     
     ctx_write_packet(&hp);
 
     if(hp.flag <= 0){
 
-        printf("failed to send\n");
+        fmt_logln(LOGFP, "failed to send");
 
         return;
 
     }
 
-    printf("sent\n");
+    fmt_logln(LOGFP, "sent");
 
     return;
 
@@ -315,20 +343,21 @@ void front_authenticate(int cfd){
 
 void front_communicate(int chan_idx){
 
-
-    printf("incoming front communication to sock\n");
+    fmt_logln(LOGFP, "incoming front communication to sock");
 
     int sockfd = CHAN_CTX[chan_idx].sockfd;
 
     if(sockfd == 0){
 
-        printf("no sock exists for communication\n");
+
+        fmt_logln(LOGFP, "no sock exists for communication");
 
         return;
 
     }
     
-    printf("sock exists\n");
+
+    fmt_logln(LOGFP, "sock exists");
 
     struct HUB_PACKET hp;
 
@@ -340,7 +369,8 @@ void front_communicate(int chan_idx){
 
     if(hp.flag <= 0){
 
-        printf("failed to communicate front read\n");
+
+        fmt_logln(LOGFP, "failed to communicate front read");
 
         return;
 
@@ -364,12 +394,12 @@ void front_communicate(int chan_idx){
 
     if(hp.flag <= 0){
 
-        printf("failed to send to sock\n");
+        fmt_logln(LOGFP, "failed to send to sock");
 
         return;
     } 
 
-    printf("sent to sock\n");
+    fmt_logln(LOGFP, "send to sock");
 
     return;
 

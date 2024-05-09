@@ -6,11 +6,6 @@
 #include "frank/core.h"
 
 
-#if DEBUG_LOCAL
-#define HOST_FULL_ADDRESS "tcp://feebdaed.xyz:2999"
-#elif
-#define HOST_FULL_ADDRESS "tcp://frankhub:2999"
-#endif
 
 #define ADMIN_PW "letssharewiththewholeuniverse"
 #define ADMIN_CONN 3

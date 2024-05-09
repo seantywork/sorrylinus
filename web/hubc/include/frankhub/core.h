@@ -15,6 +15,7 @@
 #include <time.h>
 #include <endian.h>
 #include <pthread.h>
+#include <stdarg.h>
 // ep headers
 #include <fcntl.h>
 #include <sys/epoll.h>
@@ -129,6 +130,10 @@ extern struct FRONT_CONTEXT FRONT_CTX[MAX_CONN];
 
 
 
+
+extern FILE* LOGFP;
+extern pthread_mutex_t G_MTX;
+
 extern int SOCK_FD;
 extern int SOCK_SERVLEN;
 extern int SOCK_EPLFD;
@@ -146,11 +151,6 @@ extern int MAX_SD;
 
 extern int OPT;
 
-int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path);
-
-int gen_random_bytestream(uint8_t* bytes, size_t num_bytes);
-
-int bin2hex(uint8_t* hexarray, int arrlen, uint8_t* bytearray);
 
 int make_socket_non_blocking (int sfd);
 
