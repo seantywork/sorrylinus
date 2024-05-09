@@ -40,7 +40,7 @@ dep-package:
 
 v1: $(OBJS) solimod 
 
-	gcc $(GCC_FLAGS) $(INCLUDES) $(LINKS) $(LOADS) -o soliapp main.c $(OBJS) $(LIBS) 
+	gcc $(GCC_FLAGS) $(INCLUDES) $(LINKS) $(LOADS) -o solic main.c $(OBJS) $(LIBS) 
 
 soli_core.o:
 
@@ -63,4 +63,4 @@ solimod_info_v1.o:
 
 clean:
 
-	rm -r *.o 
+	rm -r *.o *.out solic soliapp

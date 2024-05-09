@@ -80,6 +80,10 @@ cJSON.o:
 
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o cJSON.o vendor/cJSON/cJSON.c 
 
+clean-dep-source:
+
+	rm -r ./vendor/cJSON ./vendor/mongoose
+
 clean:
 
 	rm -r *.o *.out

@@ -24,7 +24,7 @@ spec:
             service:
               name: frankhub-front
               port:
-                number: 3000
+                number: 8000
   - host: "www.feebdaed.xyz"
     http:
       paths:
@@ -34,4 +34,4 @@ spec:
             service:
               name: frankhub-front
               port:
-                number: 3000
+                number: 8000

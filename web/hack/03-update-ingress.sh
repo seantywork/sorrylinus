@@ -4,9 +4,9 @@
 
 
 
-kubectl -n frank delete -f ./k8s/ingress.yaml
+kubectl -n frank delete -f ../k8s/ingress.yaml
 
-kubectl -n frank delete -f ./k8s/ingress-front.yaml
+kubectl -n frank delete -f ../k8s/ingress-front.yaml
 
 kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
@@ -21,7 +21,7 @@ mv /etc/nginx/conf.d/fd.conf /etc/nginx/conf.d/fd.conf.org
 
 systemctl restart nginx
 
-kubectl -n frank delete secret tls frank-tls-secret
+kubectl -n frank delete secret tls frank-tls-secret --ignore-not-found
 
 kubectl -n frank create secret tls frank-tls-secret --key /etc/letsencrypt/live/feebdaed.xyz/privkey.pem --cert /etc/letsencrypt/live/feebdaed.xyz/fullchain.pem 
 
@@ -47,6 +47,6 @@ do
 
 done
 
-kubectl -n frank apply -f ./k8s/ingress.yaml
+kubectl -n frank apply -f ../k8s/ingress.yaml
 
-kubectl -n frank apply -f ./k8s/ingress-front.yaml
+kubectl -n frank apply -f ../k8s/ingress-front.yaml

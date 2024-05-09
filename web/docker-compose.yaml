@@ -9,19 +9,15 @@ services:
 
 
         frankhub:
-                build: ./hub
+                build: ./hubc
                 container_name: frankhub
                 ports:  
                         - "2999:2999"
                         - "3000:3000"
                         - "3001:3001"
-                depends_on:
-                        - frankdb
               
         frankthecloud:
-                build: ./frankcc
+                build: ./frankc
                 container_name: frankthecloud
                 ports:
                         - "8000:8000"
-                depends_on:
-                        - frankhub

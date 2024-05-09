@@ -8,6 +8,7 @@
 *.out
 testsoli
 soliapp
+solic
 VENV
 .env
 flask_session

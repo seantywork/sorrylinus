@@ -15,13 +15,13 @@ the most useful software on earth
 
 [feebdaed.xyz](https://feebdaed.xyz)
 
-Now every component is written in C++, except for sorrylinus module\
-which is in C
+Now every component is written in C, including TCP/TLS sockets, \
+HTTP and WebSocket servers
 
 run option for public access is: 
 
-```bash
-    cd src && soliapp --sock --feeb
+```shell
+    cd src && solic
 ```
 
 below is the resulting output of 'test-uname' flag 
@@ -41,17 +41,4 @@ successful test has been recorded and published
 
 
 
-License
--------
-
-Refer to LICENSE file
-
-Thanks To
------------------
-- Http Lib
-[Yuji Hirose](https://github.com/yhirose/cpp-httplib)
-- Ws Lib
-[Peter Thorson](https://github.com/zaphoyd/websocketpp)
-- JSON Parser
-[Niels Lohmann](https://github.com/nlohmann/json)
 

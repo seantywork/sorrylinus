@@ -21,8 +21,11 @@
 #include <poll.h>
 #include <errno.h>
 
+#define ALLOWED_USER "seantywork@gmail.com"
+
 #define DEBUG_THIS 0
-#define DEBUG_LOCAL 1
+#define DEBUG_LOCAL 0
+
 
 #define TIMEOUT_SEC 5
 #define TIMEOUT_MS TIMEOUT_SEC * 1000
@@ -71,7 +74,7 @@
 #if DEBUG_LOCAL
 #define HOST_FULL_ADDRESS "tcp://feebdaed.xyz:2999"
 #define HOST_FULL_ADDRESS_CLIENT "tcp://feebdaed.xyz:3000"
-#elif
+#else
 #define HOST_FULL_ADDRESS "tcp://frankhub:2999"
 #define HOST_FULL_ADDRESS_CLIENT "tcp://feebdaed.xyz:3000"
 #endif

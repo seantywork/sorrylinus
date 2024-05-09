@@ -1,21 +1,6 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: frankdb
-  labels:
-    app: frankdb
-spec:
-  type: ClusterIP
-  ports:
-  - port: 3306
-    targetPort: 3306
-    protocol: TCP
-  selector:
-    app: frankdb
----
-apiVersion: v1
-kind: Service
-metadata:
   name: frankthecloud
   labels:
     app: frankthecloud
@@ -27,29 +12,6 @@ spec:
     protocol: TCP
   selector:
     app: frankthecloud
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frankdb
-spec:
-  selector:
-    matchLabels:
-      app: frankdb
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: frankdb
-    spec:
-      imagePullSecrets:
-        - name: docker-secret
-      containers:
-        - name: frankdb
-          imagePullPolicy: Always
-          image: registry.gitlab.com/seantywork/frankdb
-          ports:
-          - containerPort: 3306
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -77,13 +39,18 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frankhub-front
+  name: frankhub
   labels:
-    app: frankhub-front
+    app: frankhub
 spec:
   type: ClusterIP
   ports:
-  - port: 3000
+  - name: frankhub-admin
+    port: 2999
+    targetPort: 2999
+    protocol: TCP
+  - name: frankhub-front
+    port: 3000
     targetPort: 3000
     protocol: TCP
   selector:
@@ -123,5 +90,6 @@ spec:
         imagePullPolicy: Always
         image: registry.gitlab.com/seantywork/frankhub
         ports:
+        - containerPort: 2999
         - containerPort: 3000
         - containerPort: 3001

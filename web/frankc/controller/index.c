@@ -825,6 +825,19 @@ void handle_goauth2_login_callback(struct mg_connection *c, struct mg_http_messa
 
     }
 
+#ifdef ALLOWED_USER
+
+    if(strcmp(ALLOWED_USER, email->valuestring) != 0){
+
+        printf("user %s not allowed\n", email->valuestring);
+
+        mg_http_reply(c, 403, "","%m", MG_ESC("invalid access"));
+
+
+    }
+
+#endif
+
     int ticket_result = add_ticket(hm, email->valuestring, pw);
 
     if(ticket_result < 0){

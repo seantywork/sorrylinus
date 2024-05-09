@@ -21,6 +21,7 @@ void admin_listen_and_serve(){
         printf("socket successfully created\n"); 
     }
 
+
     bzero(&SERVADDR, sizeof(SERVADDR)); 
 
     SERVADDR.sin_family = AF_INET; 
@@ -59,6 +60,10 @@ void admin_listen_and_serve(){
 
             break;
         }
+
+        close(infd);
+
+        ADMIN_ENTERED = 0;
 
 
     }

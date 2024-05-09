@@ -1,13 +1,9 @@
 #!/bin/bash
 
-#!/bin/bash
-
 set -euxo pipefail
 
 ######## wj
 
-
-# KUBERNETES_VERSION="1.25.3-00"
 
 
 local_ip=$1
@@ -23,9 +19,9 @@ sudo apt-get update -y
 
 
 
-OS="xUbuntu_22.04"
+OS="Debian_12"
 
-VERSION="1.27"
+VERSION="1.28"
 
 
 
