@@ -6,6 +6,7 @@
 *.o
 *.so
 *.out
+*.tar.gz
 testsoli
 soliapp
 solic
