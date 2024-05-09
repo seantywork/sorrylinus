@@ -15,9 +15,13 @@ services:
                         - "2999:2999"
                         - "3000:3000"
                         - "3001:3001"
-              
+                tty: true
+                restart: always
+
         frankthecloud:
                 build: ./frankc
                 container_name: frankthecloud
                 ports:
                         - "8000:8000"
+                tty: true
+                restart: always

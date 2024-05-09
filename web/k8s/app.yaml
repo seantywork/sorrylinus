@@ -29,10 +29,12 @@ spec:
     spec:
       imagePullSecrets:
       - name: docker-secret
+      restartPolicy: Always
       containers:
       - name: frankthecloud
         imagePullPolicy: Always
         image: registry.gitlab.com/seantywork/frankthecloud
+        tty: true
         ports:
         - containerPort: 8000
 ---
@@ -85,10 +87,12 @@ spec:
     spec:
       imagePullSecrets:
       - name: docker-secret
+      restartPolicy: Always
       containers:
       - name: frankhub
         imagePullPolicy: Always
         image: registry.gitlab.com/seantywork/frankhub
+        tty: true
         ports:
         - containerPort: 2999
         - containerPort: 3000
