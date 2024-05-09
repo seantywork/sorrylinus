@@ -29,7 +29,10 @@ int admin_insert_user(uint8_t* id, uint8_t* pw);
 
 int admin_eject_user(uint8_t* id);
 
+int admin_read(int read_len, uint8_t* rbuff);
 
+
+int admin_write(int write_len, uint8_t* wbuff);
 
 
 

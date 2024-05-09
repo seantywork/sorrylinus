@@ -10,7 +10,7 @@ RUN	apt-get update
 
 RUN apt-get -y install git
 
-RUN apt-get -y install build-essential make procps
+RUN apt-get -y install build-essential make 
 
 RUN make dep-package
 

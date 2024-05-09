@@ -74,7 +74,7 @@ int admin_authenticate(){
     strcpy(command, ADMIN_COMMAND_AUTH);
     strcpy(content, ADMIN_PW);
 
-    retval = write(ADMIN_FD, command, ADMIN_COMMAND);
+    retval = admin_write(ADMIN_COMMAND, command);
 
     if(retval < 0){
 
@@ -85,8 +85,7 @@ int admin_authenticate(){
     }
 
 
-
-    retval = write(ADMIN_FD, content, ADMIN_CONTENT);
+    retval = admin_write(ADMIN_CONTENT, content);
 
     if(retval < 0){
 
@@ -99,7 +98,7 @@ int admin_authenticate(){
     memset(command, 0, ADMIN_COMMAND);
     memset(content, 0, ADMIN_CONTENT);
 
-    retval = read(ADMIN_FD, command, ADMIN_COMMAND);
+    retval = admin_read(ADMIN_COMMAND, command);
 
     if(retval < 0 ){
 
@@ -108,7 +107,7 @@ int admin_authenticate(){
         return retval;
     }
 
-    retval = read(ADMIN_FD, content, ADMIN_CONTENT);
+    retval = admin_read(ADMIN_CONTENT, content);
 
     if(retval < 0 ){
 
@@ -136,7 +135,7 @@ int admin_insert_user(uint8_t* id, uint8_t* pw){
     strcpy(content, id);
 
 
-    retval = write(ADMIN_FD, command, ADMIN_COMMAND);
+    retval = admin_write(ADMIN_COMMAND, command);
 
     if(retval < 0){
 
@@ -146,7 +145,7 @@ int admin_insert_user(uint8_t* id, uint8_t* pw){
 
     }
 
-    retval = write(ADMIN_FD, content, ADMIN_CONTENT);
+    retval = admin_write(ADMIN_CONTENT, content);
 
     if(retval < 0){
 
@@ -160,7 +159,7 @@ int admin_insert_user(uint8_t* id, uint8_t* pw){
     memset(command, 0, ADMIN_COMMAND);
     memset(content, 0, ADMIN_CONTENT);
 
-    retval = read(ADMIN_FD, command, ADMIN_COMMAND);
+    retval = admin_read(ADMIN_COMMAND, command);
 
     if(retval < 0 ){
 
@@ -169,7 +168,7 @@ int admin_insert_user(uint8_t* id, uint8_t* pw){
         return retval;
     }
 
-    retval = read(ADMIN_FD, content, ADMIN_CONTENT);
+    retval = admin_read(ADMIN_CONTENT, content);
 
     if(retval < 0 ){
 
@@ -197,7 +196,7 @@ int admin_eject_user(uint8_t* id){
     strcpy(content, id);
 
 
-    retval = write(ADMIN_FD, command, ADMIN_COMMAND);
+    retval = admin_write(ADMIN_COMMAND, command);
 
     if(retval < 0){
 
@@ -207,7 +206,7 @@ int admin_eject_user(uint8_t* id){
 
     }
 
-    retval = write(ADMIN_FD, content, ADMIN_CONTENT);
+    retval = admin_write(ADMIN_CONTENT, content);
 
     if(retval < 0){
 
@@ -221,7 +220,7 @@ int admin_eject_user(uint8_t* id){
     memset(command, 0, ADMIN_COMMAND);
     memset(content, 0, ADMIN_CONTENT);
 
-    retval = read(ADMIN_FD, command, ADMIN_COMMAND);
+    retval = admin_read(ADMIN_COMMAND, command);
 
     if(retval < 0 ){
 
@@ -230,7 +229,7 @@ int admin_eject_user(uint8_t* id){
         return retval;
     }
 
-    retval = read(ADMIN_FD, content, ADMIN_CONTENT);
+    retval = admin_read(ADMIN_CONTENT, content);
 
     if(retval < 0 ){
 
@@ -243,4 +242,114 @@ int admin_eject_user(uint8_t* id){
 
 
     return retval;
+}
+
+
+int admin_read(int read_len, uint8_t* rbuff){
+
+
+    int valread = 0;
+
+    int front_idx = 0;
+
+    int ms_until_deadline = 0;
+
+    uint8_t* rbuff_tmp = (uint8_t*)malloc(read_len * sizeof(uint8_t));
+
+    memset(rbuff_tmp, 0, read_len * sizeof(uint8_t));
+
+    int valread_tmp = 0;
+
+    struct timespec rnow;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &rnow);
+
+    struct timespec rdeadline;
+
+    while(valread < read_len){
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &rdeadline);
+
+        ms_until_deadline = ((rdeadline.tv_sec - rnow.tv_sec) * 1000 + (rdeadline.tv_nsec - rnow.tv_nsec) / 1000000);
+
+        if(ms_until_deadline > HUB_TIMEOUT_MS){
+            
+            printf("time limit exceeded\n");
+
+            free(rbuff_tmp);
+
+            return -10;
+        }
+
+        valread_tmp = read(ADMIN_FD, (void*)rbuff_tmp, read_len);
+
+        if(valread_tmp <= 0){
+
+            if(errno == EAGAIN){
+
+                memset(rbuff_tmp, 0, read_len * sizeof(uint8_t));
+
+                valread_tmp = 0;
+
+                continue;
+            }
+
+            printf("read: admin server gone: %d\n", valread);
+
+            free(rbuff_tmp);
+
+            return -1;
+        }
+
+        for(int i = 0 ; i < valread_tmp; i++){
+
+            int idx = valread + i;
+
+            rbuff[idx] = rbuff_tmp[i];
+
+        }
+
+        valread += valread_tmp;        
+
+        memset(rbuff_tmp, 0, read_len * sizeof(uint8_t));
+
+        valread_tmp = 0;
+
+    }
+
+    free(rbuff_tmp);
+
+    return valread;
+
+
+
+
+
+}
+
+
+int admin_write(int write_len, uint8_t* wbuff){
+
+
+
+    int valwrite = 0;
+
+    int front_idx = 0;
+
+    valwrite = write(ADMIN_FD, (void*)wbuff, write_len);
+
+    if (valwrite <= 0){
+
+        printf("write: admin server gone: %d\n", valwrite);
+
+        return -1;
+
+    }
+
+    return valwrite;
+
+
+
+
+
 }
