@@ -2,7 +2,7 @@
 #define _FRANK_HUB_ADMIN_H_
 
 
-#include "frankhub/core.h"
+#include "frankhub/v1/core.h"
 
 
 

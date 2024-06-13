@@ -1,7 +1,7 @@
 #ifndef _FRANK_HUB_FRONT_H_
 #define _FRANK_HUB_FRONT_H_
 
-#include "frankhub/core.h"
+#include "frankhub/v1/core.h"
 
 
 void front_listen_and_serve(void* varg);

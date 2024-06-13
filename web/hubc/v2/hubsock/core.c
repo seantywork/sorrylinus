@@ -1,5 +1,5 @@
-#include   "frankhub/sock/v1.h"
-#include   "frankhub/utils.h"
+#include   "frankhub/v2/sock/core.h"
+#include   "frankhub/v2/utils.h"
 
 int SOCK_FD;
 int SOCK_SERVLEN;
@@ -305,7 +305,7 @@ void sock_handle_client(int cfd){
 
     pthread_mutex_lock(&G_MTX);
 
-    int chan_idx = get_chanctx_by_fd(cfd, ISSOCK);
+    int chan_idx = get_chanctx_by_fd(cfd);
 
 
     if(chan_idx < 0){
@@ -352,7 +352,7 @@ void sock_authenticate(int cfd){
     hp.ctx_type = ISSOCK;
     hp.fd = SOCK_CTX[sock_idx].sockfd;
     
-    ctx_read_packet(&hp);
+    hub_read_packet(&hp);
 
     if(hp.flag <= 0){
 
@@ -433,7 +433,7 @@ void sock_authenticate(int cfd){
 
     fmt_logln(LOGFP, "writing auth result..");
     
-    ctx_write_packet(&hp);
+    hub_write_packet(&hp);
 
     if(hp.flag <= 0){
 
@@ -454,11 +454,17 @@ void sock_authenticate(int cfd){
 
 void sock_communicate(int chan_idx){
 
+    char ws_buff[MAX_WS_BUFF] = {0};
+
+    uint8_t recv_buff[WS_MAX_COMMAND_RECV_LEN] = {0};
+
+    cJSON* response = cJSON_CreateObject();
+
     fmt_logln(LOGFP, "incoming sock communication to front");
 
-    int frontfd = CHAN_CTX[chan_idx].frontfd;
+    struct mg_connection* frontc = CHAN_CTX[chan_idx].frontc;
 
-    if(frontfd == 0){
+    if(frontc == NULL){
 
         fmt_logln(LOGFP, "no front exists for communication");
 
@@ -474,7 +480,7 @@ void sock_communicate(int chan_idx){
 
     strcpy(hp.id, CHAN_CTX[chan_idx].id);
 
-    ctx_read_packet(&hp);
+    hub_read_packet(&hp);
 
     if(hp.flag <= 0){
 
@@ -484,28 +490,19 @@ void sock_communicate(int chan_idx){
 
     }
 
-    memset(hp.header, 0, HUB_HEADER_BYTELEN);
-
-    memset(hp.wbuff, 0, MAX_BUFF);
-
-    hp.ctx_type = CHAN_ISFRONT;
-
-    strcpy(hp.header, HUB_HEADER_RECVFRONT);
-
-    strncpy(hp.wbuff, hp.rbuff, hp.body_len);
-
-    hp.flag = 0;
+    strncpy(recv_buff, hp.rbuff, hp.body_len);
 
     free(hp.rbuff);
 
-    ctx_write_packet(&hp);
 
-    if(hp.flag <= 0){
+    cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+    cJSON_AddItemToObject(response, "data", cJSON_CreateString(recv_buff));
+    
+    strcpy(ws_buff, cJSON_Print(response));
 
-        fmt_logln(LOGFP, "failed to send to front");
+    int datalen = strlen(ws_buff);
 
-        return;
-    } 
+    mg_ws_send(frontc, ws_buff, datalen, WEBSOCKET_OP_TEXT);
 
     fmt_logln(LOGFP, "send to front");
 

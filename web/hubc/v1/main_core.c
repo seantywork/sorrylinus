@@ -1,4 +1,4 @@
-#include "frankhub/core.h"
+#include "frankhub/v1/core.h"
 
 
 struct CHANNEL_CONTEXT CHAN_CTX[MAX_CONN];

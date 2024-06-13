@@ -1,5 +1,5 @@
-#include   "frankhub/front/v1.h"
-#include   "frankhub/utils.h"
+#include   "frankhub/v1/front/core.h"
+#include   "frankhub/v1/utils.h"
 
 int FRONT_FD;
 int FRONT_SERVLEN;
