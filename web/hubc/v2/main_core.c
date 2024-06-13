@@ -348,7 +348,7 @@ int update_chanctx_from_front(struct mg_connection* c, char* id){
 
         ret_idx = new_chan_idx;
 
-        printf("id %s added to chanctx %d from front\n", id, chan_idx);
+        printf("id %s added to chanctx %d from front\n", id, ret_idx);
     
     } else {
 
