@@ -23,6 +23,7 @@ OBJS += fhub_utils.o
 OBJS += fhub_sock.o
 OBJS += fhub_front.o
 
+INCLUDESV1 := -I./include
 
 LIBSV1 := -lpthread -lssl -lcrypto 
 
@@ -82,42 +83,42 @@ fhub_front.o:
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_front.o v2/hubfront/core.c 
 
 
-dep-package1:
+dep-package-v1:
 
 	apt-get update
 
 	apt-get -y install $(DEP_PACKAGES)
 
-dev1: $(OBJSV1)
+dev-v1: $(OBJSV1)
 
-	gcc $(GCC_DEV_FLAGS) $(INCLUDES) -o hubc_v1.out main.c $(OBJSV1) $(LIBSV1) 
+	gcc $(GCC_DEV_FLAGS) $(INCLUDESV1) -o hubc_v1.out main_v1.c $(OBJSV1) $(LIBSV1) 
 
-release1: $(OBJSV1)
+release-v1: $(OBJSV1)
 
-	gcc $(GCC_REL_FLAGS) $(INCLUDES) -o hubc_v1.out main.c $(OBJSV1) $(LIBSV1) 
+	gcc $(GCC_REL_FLAGS) $(INCLUDESV1) -o hubc_v1.out main_v1.c $(OBJSV1) $(LIBSV1) 
 
 fhub_core_v1.o:
 
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_core_v1.o v1/main_core.c 
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDESV1) -o fhub_core_v1.o v1/main_core.c 
 
 fhub_admin_v1.o:
 
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_admin_v1.o v1/main_admin.c 
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDESV1) -o fhub_admin_v1.o v1/main_admin.c 
 
 fhub_utils_v1.o:
 
 
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_utils_v1.o v1/main_utils.c 
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDESV1) -o fhub_utils_v1.o v1/main_utils.c 
 
 
 fhub_sock_v1.o:
 
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_sock_v1.o v1/hubsock/core.c 
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDESV1) -o fhub_sock_v1.o v1/hubsock/core.c 
 
 fhub_front_v1.o:
 
 
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o fhub_front_v1.o v1/hubfront/core.c 
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDESV1) -o fhub_front_v1.o v1/hubfront/core.c 
 
 
 

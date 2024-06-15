@@ -14,6 +14,8 @@ RUN apt-get -y install build-essential make
 
 RUN make dep-package
 
+RUN make dep-source
+
 RUN	make release
 
 #CMD ["tail", "-f","/dev/null"]
