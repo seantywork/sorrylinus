@@ -7,7 +7,7 @@ GCC_LIB_FLAGS := -Wall -shared
 
 GCC_LIB_OBJ_FLAGS := -Wall -c -fpic 
 
-DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev
+DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
 
 INCLUDES := -I../include
 
@@ -48,7 +48,7 @@ soli_core.o:
 
 soli_sock_v1.o:
 
-	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_sock_v1.o sock/v1.c
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_sock_v1.o v1/sock/core.c
 
 
 solimod: $(SOLIMOD_OBJS)
@@ -58,7 +58,7 @@ solimod: $(SOLIMOD_OBJS)
 
 solimod_info_v1.o:
 
-	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_info_v1.o modules/info/v1.c
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_info_v1.o modules/v1/info/core.c
 
 
 clean:
