@@ -55,22 +55,26 @@ spec:
     port: 3000
     targetPort: 3000
     protocol: TCP
+  - name: frankhub-hub
+    port: 3001
+    targetPort: 3001
+    protocol: TCP
   selector:
     app: frankhub
 ---
-kind: Service
-apiVersion: v1
-metadata:
-  name: frankhub-sock
-spec:
-  type: NodePort
-  selector:
-    app: frankhub
-  ports:
-    - nodePort: 30011
-      port: 3001
-      targetPort: 3001
----
+#kind: Service
+#apiVersion: v1
+#metadata:
+#  name: frankhub-sock
+#spec:
+#  type: NodePort
+#  selector:
+#    app: frankhub
+#  ports:
+#    - nodePort: 30011
+#      port: 3001
+#      targetPort: 3001
+#---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
