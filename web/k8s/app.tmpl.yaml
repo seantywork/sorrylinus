@@ -32,21 +32,16 @@ spec:
   selector:
     app: sorrylinus-again
   ports:
-    - name: sorrylinus-again-5353
-      nodePort: 30013
-      port: 5353
-      targetPort: 5353
-      protocol: UDP
     - name: sorrylinus-again-8006
       nodePort: 30016
       port: 8006
       targetPort: 8006
       protocol: UDP
     {{- range seq 0 100}}
-    - name: sorrylinus-again-{{add 50000 .}}
+    - name: sorrylinus-again-{{add 31000 .}}
       nodePort: {{add 31000 .}}
-      port: {{add 50000 .}}
-      targetPort: {{add 50000 .}}
+      port: {{add 31000 .}}
+      targetPort: {{add 31000 .}}
       protocol: UDP
     {{- end -}}
     {{ print "\n" }}
@@ -81,12 +76,10 @@ spec:
           protocol: TCP
         - containerPort: 8004
           protocol: TCP
-        - containerPort: 5353
-          protocol: UDP
         - containerPort: 8006
           protocol: UDP
         {{- range seq 0 100}}
-        - containerPort: {{add 50000 .}}
+        - containerPort: {{add 31000 .}}
           protocol: UDP
         {{- end -}}
         {{ print "\n" }}
