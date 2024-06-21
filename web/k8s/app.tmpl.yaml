@@ -1,26 +1,25 @@
-apiVersion: v1
+---
 kind: Service
+apiVersion: v1
 metadata:
-  name: sorrylinus-again
-  labels:
-    app: sorrylinus-again
+  name: sorrylinus-again-web
 spec:
-  type: ClusterIP
-  ports:
-  - name: sorrylinus-again-8000
-    port: 8000
-    targetPort: 8000
-    protocol: TCP
-  - name: sorrylinus-again-8002
-    port: 8002
-    targetPort: 8002
-    protocol: TCP
-  - name: sorrylinus-again-8004
-    port: 8004
-    targetPort: 8004
-    protocol: TCP
+  type: NodePort
   selector:
     app: sorrylinus-again
+  ports:
+    - name: sorrylinus-again-8000
+      nodePort: 30010
+      port: 8000
+      targetPort: 8000
+    - name: sorrylinus-again-8002
+      nodePort: 30012
+      port: 8002
+      targetPort: 8002
+    - name: sorrylinus-again-8004
+      nodePort: 30014
+      port: 8004
+      targetPort: 8004
 
 ---
 kind: Service
