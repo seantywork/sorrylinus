@@ -69,7 +69,7 @@ void handle_healtiness_probe(struct mg_connection *c, struct mg_http_message *hm
 
 
 
-    cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+    cJSON_AddItemToObject(response, "status", cJSON_CreateString("success"));
     cJSON_AddItemToObject(response, "data", cJSON_CreateString("fine"));
 
     strcpy(rest_buff, cJSON_Print(response));
@@ -208,7 +208,7 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
     if(wm->data.len > MAX_WS_BUFF){
 
         printf("failed handle ws: data too big\n");
-        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
         cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
         
         strcpy(ws_buff, cJSON_Print(response));
@@ -228,7 +228,7 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
         printf("failed handle ws: data invalid\n");
 
 
-        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
         cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
         
         strcpy(ws_buff, cJSON_Print(response));
@@ -247,7 +247,7 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
 
         printf("failed handle ws: data invalid\n");
 
-        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
         cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
         
         strcpy(ws_buff, cJSON_Print(response));
@@ -270,7 +270,7 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
 
         printf("failed handle ws: command too long\n");
 
-        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
         cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
         
         strcpy(ws_buff, cJSON_Print(response));
@@ -289,7 +289,7 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
 
         printf("failed handle ws: no data field\n");
 
-        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
         cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
         
         strcpy(ws_buff, cJSON_Print(response));
@@ -308,7 +308,7 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
 
         printf("failed handle ws: data len too long\n");
 
-        cJSON_AddItemToObject(response, "status", cJSON_CreateString("FAIL"));
+        cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
         cJSON_AddItemToObject(response, "data", cJSON_CreateString("null"));
         
         strcpy(ws_buff, cJSON_Print(response));
@@ -336,7 +336,16 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
         if(v < 0){
 
             fmt_logln(LOGFP,"invalid idpw"); 
-    
+            printf("failed handle ws: invalid idpw\n");
+            cJSON_AddItemToObject(response, "status", cJSON_CreateString("fail"));
+            cJSON_AddItemToObject(response, "data", cJSON_CreateString("invalid idpw"));
+            
+            strcpy(ws_buff, cJSON_Print(response));
+
+            datalen = strlen(ws_buff);
+
+            mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
+
             return -10;
 
         } else {
@@ -354,6 +363,16 @@ int front_authenticate(struct mg_connection* c, struct mg_ws_message *wm, int* i
             }
 
             fmt_logln(LOGFP, "initial auth success");
+
+            printf("handle ws: initial auth success\n");
+            cJSON_AddItemToObject(response, "status", cJSON_CreateString("success"));
+            cJSON_AddItemToObject(response, "data", cJSON_CreateString("accepted"));
+            
+            strcpy(ws_buff, cJSON_Print(response));
+
+            datalen = strlen(ws_buff);
+
+            mg_ws_send(c, ws_buff, datalen, WEBSOCKET_OP_TEXT);
 
             chan_idx = new_idx;
 

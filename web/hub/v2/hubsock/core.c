@@ -415,7 +415,7 @@ void sock_authenticate(int cfd){
     }
 
 
-    uint64_t body_len = strlen("SUCCESS") + 1;
+    uint64_t body_len = strlen("success") + 1;
 
     memset(hp.header, 0, HUB_HEADER_BYTELEN);
 
@@ -427,7 +427,7 @@ void sock_authenticate(int cfd){
 
     hp.body_len = body_len;
 
-    strcat(hp.wbuff,"SUCCESS");
+    strcat(hp.wbuff,"success");
 
     strcpy(hp.id, id);
 
@@ -495,7 +495,7 @@ void sock_communicate(int chan_idx){
     free(hp.rbuff);
 
 
-    cJSON_AddItemToObject(response, "status", cJSON_CreateString("SUCCESS"));
+    cJSON_AddItemToObject(response, "status", cJSON_CreateString("success"));
     cJSON_AddItemToObject(response, "data", cJSON_CreateString(recv_buff));
     
     strcpy(ws_buff, cJSON_Print(response));
