@@ -107,8 +107,25 @@
 
 #define MAX_BUFF HUB_BODY_BYTEMAX
 
+
+#define SOLI_INFO_UNAME "info-uname"
+#define SOLI_CCTV_STREAM "cctv-stream"
+#define SOLI_IR_SEND   "ir-send"
+
+#define SOLI_MAX_CMD_LEN 128
+
+typedef struct SOLI_CMD {
+  char cmd[SOLI_MAX_CMD_LEN];
+  int argc;
+  char **argv;
+} SOLI_CMD;
+
+
 int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path);
 
+uint8_t* soli_handle(uint64_t command_len, uint8_t* command, int* flag);
+
+SOLI_CMD* soli_parse_cmd(char* raw);
 
 
 #endif

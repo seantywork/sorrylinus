@@ -33,7 +33,7 @@ int get_socket(char* url);
 
 int hubc_communicate();
 
-uint8_t* hubc_handle(uint64_t command_len, uint8_t* command, int* flag);
+
 
 int hubc_write(int write_len, uint8_t* write_bytes);
 

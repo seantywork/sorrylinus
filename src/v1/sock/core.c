@@ -474,7 +474,7 @@ int hubc_communicate(){
 
         flag = 0;
 
-        uint8_t* body = hubc_handle(body_len, rbuff, &flag);
+        uint8_t* body = soli_handle(body_len, rbuff, &flag);
 
         memcpy(wbuff, body, flag);
 
@@ -498,37 +498,6 @@ int hubc_communicate(){
 
 }
 
-
-uint8_t* hubc_handle(uint64_t command_len, uint8_t* command, int* flag){
-
-    uint8_t* body;
-    
-    if(strcmp(command, SOLI_TESTUNAME) == 0){
-
-        *flag = 1024;
-        
-        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
-
-        memset(body, 0, (*flag) * sizeof(uint8_t));
-
-        info_uname(body);
-
-
-    } else {
-
-        *flag = strlen("no such command") + 1;
-
-        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
-
-        memset(body, 0, (*flag) * sizeof(uint8_t));
-
-        strcpy(body, "no such command");
-
-    }
-
-
-    return body;
-}
 
 
 int hubc_write(int write_len, uint8_t* write_bytes){

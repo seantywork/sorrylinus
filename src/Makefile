@@ -25,6 +25,8 @@ OBJS := soli_core.o
 OBJS += soli_sock_v1.o
 
 SOLIMOD_OBJS := solimod_info_v1.o
+SOLIMOD_OBJS += solimod_ir_v1.o
+SOLIMOD_OBJS += solimod_cctv_v1.o
 
 all:
 
@@ -59,6 +61,14 @@ solimod: $(SOLIMOD_OBJS)
 solimod_info_v1.o:
 
 	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_info_v1.o modules/v1/info/core.c
+
+solimod_ir_v1.o:
+
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_ir_v1.o modules/v1/ir/core.c
+
+solimod_cctv_v1.o:
+
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_cctv_v1.o modules/v1/cctv/core.c
 
 
 clean:
