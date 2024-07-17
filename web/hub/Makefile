@@ -49,9 +49,9 @@ dep-package:
 
 dep-source:
 
-	cd vendor && $(DEP_MONGOOSE)
+	cd vendor && rm -rf mongoose && $(DEP_MONGOOSE)
 
-	cd vendor && $(DEP_CJSON)
+	cd vendor && rm -rf cJSON && $(DEP_CJSON)
 
 
 dev: $(OBJS) $(DEP_OBJS)

@@ -1,15 +1,10 @@
 version: "3"
 
 services:
-        #frankdb:
-        #        build: ./mysql
-        #        container_name: frankdb
-        #        ports:
-        #                - "3306:3306"
 
 
         frankhub:
-                build: ./hubc
+                build: ./hub
                 container_name: frankhub
                 ports:  
                         - "3000:3000"
@@ -17,10 +12,3 @@ services:
                 tty: true
                 restart: always
 
-        #frankthecloud:
-        #        build: ./frankc
-        #        container_name: frankthecloud
-        #        ports:
-        #                - "8000:8000"
-        #        tty: true
-        #        restart: always
