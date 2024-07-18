@@ -11,7 +11,7 @@ DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev libgstreamer1.0-dev libgstream
 
 DEP_PIGPIO := git clone https://github.com/seantywork/pigpio.git
 
-INCLUDES := -I../include
+INCLUDES := -I../include -I/usr/include/gstreamer-1.0 -I/usr/include/x86_64-linux-gnu -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
 
 LINKS := -L../lib
 
@@ -19,7 +19,7 @@ LOADS := -Wl,-rpath=../lib
 
 LIBS := -lsolimod -lsqlite3 -lssl -lcrypto 
 
-SOLIMOD_LIBS := -lrt -lm -lpthread -lpigpio
+SOLIMOD_LIBS := -lrt -lm -lpthread -lpigpio -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0
 
 # -lpgpio
 
@@ -84,6 +84,7 @@ solimod_ir_v1.o:
 solimod_cctv_v1.o:
 
 	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_cctv_v1.o modules/v1/cctv/core.c
+
 
 
 clean:

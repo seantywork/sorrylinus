@@ -41,7 +41,6 @@ SOLI_CMD* solimod_parse_cmd(char* raw);
 
 void solimod_free_cmd(SOLI_CMD* soli_cmd);
 
-
 void solimod_discovery(char* command_table);
 
 

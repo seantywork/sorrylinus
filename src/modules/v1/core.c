@@ -1,5 +1,7 @@
 
 #include "sorrylinus/modules/v1/core.h"
+#include "sorrylinus/modules/v1/info/core.h"
+#include "sorrylinus/modules/v1/cctv/core.h"
 
 
 
@@ -8,7 +10,7 @@ SOLI_CMD_TABLE cmd_table[] = {
 
     { .cmd = "discovery",    .args="-",                .comment="-"},
     { .cmd = "info-uname",   .args="-",                .comment="-"},
-    { .cmd = "cctv-stream",  .args="conf,address",     .comment="-"},
+    { .cmd = "cctv-stream",  .args="conf,location",    .comment="-"},
     { .cmd = "ir-send",      .args="conf",             .comment="-"},
 };
 
@@ -43,7 +45,15 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
 
     } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_INFO_UNAME].cmd) == 0){
 
+
         info_uname(body);
+
+
+    } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_CCTV_STREAM].cmd) == 0){
+
+
+        cctv_stream(body, soli_cmd->argv[0], soli_cmd->argv[1]);
+
 
     } else {
 
