@@ -47,13 +47,8 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
 
     } else {
 
-        *flag = strlen("no such command") + 1;
 
-        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
-
-        memset(body, 0, (*flag) * sizeof(uint8_t));
-
-        strcpy(body, "no such command");
+        strcpy(body, "failed to handle soli: no such cmd");
 
     }
 
