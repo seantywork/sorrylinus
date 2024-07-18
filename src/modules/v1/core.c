@@ -1,66 +1,49 @@
-#include "sorrylinus/soli.h"
-#include "sorrylinus/modules/core.h"
+
+#include "sorrylinus/modules/v1/core.h"
 
 
-int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path){
 
 
-    int valread = 0 ;
+SOLI_CMD_TABLE cmd_table[] = {
 
-    int c;
-
-    FILE* fp;
-
-    fp = fopen(file_path, "r");
-
-    while(1) {
-
-        c = fgetc(fp);
-        if( feof(fp) ) {
-            break;
-        }
+    { .cmd = "discovery",    .args="-",                .comment="-"},
+    { .cmd = "info-uname",   .args="-",                .comment="-"},
+    { .cmd = "cctv-stream",  .args="conf,address",     .comment="-"},
+    { .cmd = "ir-send",      .args="conf",             .comment="-"},
+};
 
 
-        buff[valread] = c;
 
-        valread += 1;
-
-        if(valread > max_buff_len){
-
-            return -10;
-        }
-    
-   }
-
-    return valread;
-}
-
-
-uint8_t* soli_handle(uint64_t command_len, uint8_t* command, int* flag){
+uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
 
     uint8_t* body;
 
-    SOLI_CMD* soli_cmd = soli_parse_cmd(command);
+    *flag = 10240;
+    
+    body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
 
-    if(strcmp(soli_cmd->cmd, SOLI_INFO_UNAME) == 0){
+    memset(body, 0, (*flag) * sizeof(uint8_t));
 
-        *flag = 1024;
-        
-        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
+    SOLI_CMD* soli_cmd = solimod_parse_cmd(command);
 
-        memset(body, 0, (*flag) * sizeof(uint8_t));
+    if((void*)soli_cmd == NULL){
+
+        strcpy(body, "failed to handle soli: null cmd");
+
+        return body;
+
+    }
+
+    if(strcmp(soli_cmd->cmd, cmd_table[SOLI_DISCOVERY].cmd) == 0){
+
+
+        solimod_discovery(body);
+
+
+
+    } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_INFO_UNAME].cmd) == 0){
 
         info_uname(body);
-
-
-
-    } else if (strcmp(soli_cmd->cmd, SOLI_CCTV_STREAM) == 0){
-
-        *flag = 1024;
-
-        body = (uint8_t*)malloc((*flag) * sizeof(uint8_t));
-
-        memset(body, 0, (*flag) * sizeof(uint8_t));
 
     } else {
 
@@ -74,13 +57,15 @@ uint8_t* soli_handle(uint64_t command_len, uint8_t* command, int* flag){
 
     }
 
+    solimod_free_cmd(soli_cmd);
+
 
     return body;
 }
 
 
 
-SOLI_CMD* soli_parse_cmd(char* raw){
+SOLI_CMD* solimod_parse_cmd(char* raw){
 
     char* token;
 
@@ -154,4 +139,43 @@ SOLI_CMD* soli_parse_cmd(char* raw){
     
 
     return soli_cmd;
+}
+
+
+void solimod_free_cmd(SOLI_CMD* soli_cmd){
+
+
+    if(soli_cmd->argc != 0){
+
+        for(int i = 0 ; i < soli_cmd->argc; i ++){
+
+
+            free(soli_cmd->argv[i]);
+
+        }
+
+        free(soli_cmd->argv);
+
+    }
+
+
+    free(soli_cmd);
+
+
+}
+
+
+void solimod_discovery(char* command_table){
+
+
+    for(int i =0; i < SOLI_LEN; i++){
+
+        strcat(command_table, cmd_table[i].cmd);
+        strcat(command_table, ":");
+        strcat(command_table, cmd_table[i].args);
+        strcat(command_table,"\n");
+
+    }
+
+
 }

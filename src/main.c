@@ -1,4 +1,5 @@
-#include "sorrylinus/sock/v1.h"
+#include "sorrylinus/soli.h"
+#include "sorrylinus/v1/sock/core.h"
 
 
 int main(int argc, char** argv){
@@ -32,4 +33,38 @@ int main(int argc, char** argv){
 
 
     return 0;
+}
+
+
+int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path){
+
+
+    int valread = 0 ;
+
+    int c;
+
+    FILE* fp;
+
+    fp = fopen(file_path, "r");
+
+    while(1) {
+
+        c = fgetc(fp);
+        if( feof(fp) ) {
+            break;
+        }
+
+
+        buff[valread] = c;
+
+        valread += 1;
+
+        if(valread > max_buff_len){
+
+            return -10;
+        }
+    
+   }
+
+    return valread;
 }

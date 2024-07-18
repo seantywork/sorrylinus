@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "sorrylinus/modules/core.h"
+#include "sorrylinus/modules/v1/core.h"
 
 
 #define MAX_TEST_UNAME_LEN 1024 *  5

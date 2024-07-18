@@ -1,5 +1,5 @@
-#include "sorrylinus/sock/v1.h"
-#include "sorrylinus/modules/info/v1.h"
+#include "sorrylinus/v1/sock/core.h"
+#include "sorrylinus/modules/v1/core.h"
 
 SSL_CTX* ctx = NULL;
 BIO *web = NULL; 
@@ -474,7 +474,7 @@ int hubc_communicate(){
 
         flag = 0;
 
-        uint8_t* body = soli_handle(body_len, rbuff, &flag);
+        uint8_t* body = solimod_handle(body_len, rbuff, &flag);
 
         memcpy(wbuff, body, flag);
 

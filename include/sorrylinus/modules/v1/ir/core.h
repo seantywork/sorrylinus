@@ -7,7 +7,7 @@ extern "C" {
 
 
 
-#include "sorrylinus/modules/core.h"
+#include "sorrylinus/modules/v1/core.h"
 
 #include <pigpio.h>
 
