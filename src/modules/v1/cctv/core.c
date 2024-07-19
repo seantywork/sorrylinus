@@ -8,17 +8,19 @@ int CCTV_STATUS = CCTV_READY;
 
 char CCTV_MESSAGE[CCTV_THREAD_MSG_LEN] = {0};
 
-void cctv_stream_toggle(char* result, char* conf, char* stream_key){
+void cctv_stream_toggle(char* result, char* stream_key){
 
 
     CCTV_STREAM_ARG sarg;
 
-    strcpy(sarg.stream_key, stream_key);
+    sarg.stream_key = stream_key;
 
     int was_ready = 0;
     int was_streaming = 0;
 
     memset(CCTV_MESSAGE, 0, CCTV_THREAD_MSG_LEN);
+
+    printf("stream toggle: %s\n", sarg.stream_key);
 
     if(CCTV_STATUS == CCTV_READY){
 
@@ -42,6 +44,7 @@ void cctv_stream_toggle(char* result, char* conf, char* stream_key){
         return;
     }
 
+    printf("stream toggle: action initiated\n");
 
     int ms_until_deadline = 0;
 
@@ -117,14 +120,17 @@ void* start_cctv_stream(void* varg){
 
     GstStateChangeReturn ret;
 
-    int argc = 1;
-    char argv[1][12] = {
-        "cctv-stream"
-    };
+    strcat(CCTV_MESSAGE, "gst entered\n");
+    fmt_logln(LOGFPMOD, "gst entered");
 
+
+    int argc = 1;
+    char* arg1[1] = {"cctv-stream"}; 
+    char** argv[1] = { arg1 };
     gst_init(&argc, &argv);
 
     strcat(CCTV_MESSAGE, "gst initiated\n");
+    fmt_logln(LOGFPMOD, "gst initiated");
 
     loop = g_main_loop_new (NULL, FALSE);
 
@@ -161,11 +167,13 @@ void* start_cctv_stream(void* varg){
         || !filter1 || !enc1 || !mux1 || !queue2 || !sink1
     ){
         strcat(CCTV_MESSAGE, "one element could not be created. exiting.\n");
+        fmt_logln(LOGFPMOD, "one element could not be created. exiting.");
         CCTV_STATUS = CCTV_FAILED;
         return NULL;
     }
 
     strcat(CCTV_MESSAGE, "elements created\n");
+    fmt_logln(LOGFPMOD, "elements created");
 
 
     gst_bin_add_many(GST_BIN(pipeline), source, queue1, convert1, scale1, filter1, enc1, mux1, queue2, sink1, NULL);
@@ -173,11 +181,13 @@ void* start_cctv_stream(void* varg){
     if (!gst_element_link_many(source, queue1, convert1, scale1, filter1, enc1, mux1, queue2, sink1,NULL))
     {
         strcat(CCTV_MESSAGE, "elements could not be linked: exiting.\n");
+        fmt_logln(LOGFPMOD, "elements could not be linked: exiting.");
         CCTV_STATUS = CCTV_FAILED;
         return NULL;
     }
 
     strcat(CCTV_MESSAGE, "elements linked\n");
+    fmt_logln(LOGFPMOD, "elements linked");
 
     caps1 = gst_caps_new_simple("video/x-raw",
         "width", G_TYPE_INT, 960,
@@ -206,10 +216,15 @@ void* start_cctv_stream(void* varg){
     gst_object_unref (bus);
 
     strcat(CCTV_MESSAGE, "cctv is streaming\n");
+    fmt_logln(LOGFPMOD, "cctv is streaming");
 
     CCTV_STATUS = CCTV_STREAMING;
 
     g_main_loop_run (loop);
+
+    strcat(CCTV_MESSAGE, "streaming loop\n");
+    fmt_logln(LOGFPMOD, "streaming loop");
+
 
     gst_element_set_state (pipeline, GST_STATE_NULL);
     gst_object_unref (pipeline);

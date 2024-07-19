@@ -19,11 +19,13 @@ typedef enum SOLI_CMD_TYPE {
   SOLI_LEN
 };
 
-#define SOLI_MAX_CMD_LEN 64
+#define SOLI_MAX_CMDBYTE_LEN 128
+#define SOLI_MAX_ARGBYTE_LEN 512
 #define SOLI_MAX_CMD_TABLE_LEN SOLI_MAX_CMD_LEN * 10 * 10
 #define SOLIMOD_TIMEOUT_MS 20000
+
 typedef struct SOLI_CMD {
-  char cmd[SOLI_MAX_CMD_LEN];
+  char cmd[SOLI_MAX_CMDBYTE_LEN];
   int argc;
   char **argv;
 } SOLI_CMD;

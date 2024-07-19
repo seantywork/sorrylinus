@@ -64,8 +64,14 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
 
     memset(body, 0, (*flag) * sizeof(uint8_t));
 
+    printf("raw cmd received: %s\n", command);
+
     SOLI_CMD* soli_cmd = solimod_parse_cmd(command);
 
+
+    printf("cmd: %s\n", soli_cmd->cmd);
+
+    printf("argc: %d\n", soli_cmd->argc);
 
     if((void*)soli_cmd == NULL){
 
@@ -91,13 +97,13 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
     } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_CCTV_STREAM].cmd) == 0){
 
 
-        if(soli_cmd->argc < 2){
+        if(soli_cmd->argc < 1){
 
             sprintf(body, "failed to handle soli: too few arguments: %d for cmd: %s\n" , soli_cmd->argc, soli_cmd->cmd);
 
         } else {
 
-            cctv_stream_toggle(body, soli_cmd->argv[0], soli_cmd->argv[1]);
+            cctv_stream_toggle(body, soli_cmd->argv[0]);
         
         }
 
@@ -124,65 +130,41 @@ SOLI_CMD* solimod_parse_cmd(char* raw){
 
     char* token;
 
-    char* cmd_delim = ":";
-
     char* arg_delim = ",";
+
+    char raw_arg[SOLI_MAX_ARGBYTE_LEN] = {0};
+
+    int got_cmd = 0;
+
+    int idx = 0;
 
     SOLI_CMD* soli_cmd = (SOLI_CMD*)malloc(sizeof(SOLI_CMD));
 
     memset(soli_cmd, 0, sizeof(SOLI_CMD));
-
-    token = strtok(raw, cmd_delim);
     
-    int idx = 0;
-    
-    while( token != NULL ) {
+    while(1) {
 
-        if(idx == 0){
+        if(*raw == ':'){
 
-            strncpy(soli_cmd->cmd, token, SOLI_MAX_CMD_LEN);
-
-        } else {
-
-            int arglen = strlen(token) + 1;
-
-            if (arglen < 2){
-
-                break;
-            }
-
-            if(idx == 1){
-
-                soli_cmd->argv = (char**)malloc(sizeof(char*) * idx);
-
-                soli_cmd->argv[idx - 1] = (char*)malloc(sizeof(char) * arglen);
-
-                memset(soli_cmd->argv[idx - 1], 0, sizeof(char) * arglen);
-
-                strcpy(soli_cmd->argv[idx - 1], token);
-
-
-            } else {
-
-                soli_cmd->argv = (char**)realloc(soli_cmd->argv, sizeof(char*) * idx);
-
-                soli_cmd->argv[idx - 1] = (char*)malloc(sizeof(char) * arglen);
-
-                memset(soli_cmd->argv[idx - 1], 0, sizeof(char) * arglen);
-
-                strcpy(soli_cmd->argv[idx - 1], token); 
-
-            }
-
+            got_cmd = 1;
+            break;
 
         }
-        
-        token = strtok(NULL, arg_delim);
+
+        soli_cmd->cmd[idx] = *raw;
 
         idx += 1;
+        raw += 1;
+
+        if(idx > SOLI_MAX_CMDBYTE_LEN){
+
+            break;
+
+        }
+
     }
 
-    if(idx == 0){
+    if(got_cmd != 1){
 
         free(soli_cmd);
 
@@ -190,7 +172,40 @@ SOLI_CMD* solimod_parse_cmd(char* raw){
 
     }
 
-    soli_cmd->argc = idx - 1;
+    idx = 0;
+
+    raw += 1;
+
+    strcpy(raw_arg, raw);
+
+    token = strtok(raw_arg, arg_delim);
+
+    while(token != NULL){
+
+        if(idx == 0){
+
+            soli_cmd->argv = (char**)malloc(sizeof(char*) * (idx + 1));
+
+        } else {
+
+            soli_cmd->argv = (char**)realloc(soli_cmd->argv, sizeof(char*) * (idx + 1));
+        }
+
+        int arglen = strlen(token) + 1;
+
+        soli_cmd->argv[idx] = (char*)malloc(sizeof(char) * arglen);
+
+        memset(soli_cmd->argv[idx], 0, sizeof(char) * arglen);
+
+        strcpy(soli_cmd->argv[idx], token);
+        
+        token = strtok(NULL, arg_delim);
+
+        idx += 1;
+    }
+
+
+    soli_cmd->argc = idx;
     
 
     return soli_cmd;
