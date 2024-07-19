@@ -25,7 +25,11 @@ int soli_conf_init(){
         return conflen;
 
     }
-    
+
+    char** lines;
+
+    int line_count = 0;
+
     char* token;
 
     char* delim = "\n";
@@ -33,12 +37,40 @@ int soli_conf_init(){
     char row[SOLI_MAX_CONF_RAW_LEN] = {0};
 
     token = strtok(wbuff, delim);
-    
-    while( token != NULL ) {
+
+    while(token != NULL){
+
+        int linelen = 0;
+
+        if (line_count == 0){
+
+            lines = (char**)malloc(sizeof(char*) * (line_count + 1));
+
+        } else {
+
+            lines = (char**)realloc(lines, sizeof(char*) * (line_count + 1));
+
+        }
+
+        linelen = strlen(token) + 1;
+
+        lines[line_count] = (char*)malloc(sizeof(char) * linelen);
+
+        memset(lines[line_count], 0 , sizeof(char) * linelen);
+
+        strcpy(lines[line_count], token);
+
+        line_count += 1;
+
+        token = strtok(NULL, delim);
+    }
+
+
+    for (int i = 0 ; i < line_count; i++) {
 
         memset(row, 0, SOLI_MAX_CONF_RAW_LEN);
 
-        int flag = soli_conf_validate(row, token);
+        int flag = soli_conf_validate(row, lines[i]);
 
         if(flag < 0){
 
@@ -52,7 +84,17 @@ int soli_conf_init(){
             return flag;
         }
 
-        token = strtok(NULL, delim);
+    }
+
+    for(int i = 0 ; i < line_count; i++){
+
+        free(lines[i]);
+
+    }
+
+    if (line_count != 0){
+
+        free(lines);
     }
 
 
@@ -124,10 +166,12 @@ int soli_conf_add(char* row){
 
         token = strtok(NULL, delim);
 
+
         idx += 1;
+
     }
 
-    if (idx != 2){
+    if (idx != 1){
 
         return -11;
 

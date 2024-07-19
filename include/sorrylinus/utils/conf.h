@@ -4,6 +4,7 @@
 
 
 #include "sorrylinus/soli.h"
+#include "sorrylinus/utils/core.h"
 
 
 typedef enum SOLI_CONF_ENUM {

@@ -31,7 +31,9 @@ int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path){
             return -10;
         }
     
-   }
+    }
+
+    fclose(fp);
 
     return valread;
 }
