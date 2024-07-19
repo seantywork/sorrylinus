@@ -30,7 +30,13 @@ SOLIMOD_OBJS += solimod_info_v1.o
 SOLIMOD_OBJS += solimod_ir_v1.o
 SOLIMOD_OBJS += solimod_cctv_v1.o
 
-DEP_OBJS :=
+
+COMMON_OBJS := soli_utils.o 
+COMMON_OBJS += soli_conf.o 
+
+COMMON_MOD_OBJS := soli_utils_mod.o 
+COMMON_MOD_OBJS += soli_conf_mod.o 
+
 
 all:
 
@@ -53,9 +59,9 @@ dep-source:
 	rm -rf pigpio
 
 
-v1: $(OBJS) solimod 
+v1: $(OBJS) solimod $(COMMON_OBJS)
 
-	gcc $(GCC_FLAGS) $(INCLUDES) $(LINKS) $(LOADS) -o solic main.c $(OBJS) $(LIBS) 
+	gcc $(GCC_FLAGS) $(INCLUDES) $(LINKS) $(LOADS) -o solic main.c $(OBJS) $(COMMON_OBJS) $(LIBS) 
 
 
 soli_sock_v1.o:
@@ -63,9 +69,9 @@ soli_sock_v1.o:
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_sock_v1.o v1/sock/core.c
 
 
-solimod: $(SOLIMOD_OBJS) $(DEP_OBJS)
+solimod: $(SOLIMOD_OBJS) $(COMMON_MOD_OBJS)
 
-	gcc $(GCC_LIB_FLAGS) $(INCLUDES) -o ../lib/libsolimod.so $(SOLIMOD_OBJS) $(SOLIMOD_LIBS)
+	gcc $(GCC_LIB_FLAGS) $(INCLUDES) -o ../lib/libsolimod.so $(SOLIMOD_OBJS) $(COMMON_MOD_OBJS) $(SOLIMOD_LIBS) 
 
 
 solimod_v1.o:
@@ -85,7 +91,21 @@ solimod_cctv_v1.o:
 
 	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o solimod_cctv_v1.o modules/v1/cctv/core.c
 
+soli_utils.o:
 
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_utils.o utils/core.c
+
+soli_conf.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_conf.o utils/conf.c
+
+soli_utils_mod.o:
+
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o soli_utils_mod.o utils/core.c
+
+soli_conf_mod.o:
+
+	gcc $(GCC_LIB_OBJ_FLAGS) $(INCLUDES) -o soli_conf_mod.o utils/conf.c
 
 clean:
 

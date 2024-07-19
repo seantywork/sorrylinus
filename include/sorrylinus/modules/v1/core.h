@@ -7,17 +7,21 @@ extern "C" {
 
 
 #include "sorrylinus/soli.h"
+#include "sorrylinus/utils/conf.h"
+#include "sorrylinus/utils/core.h"
 
+typedef enum SOLI_CMD_TYPE {
 
-#define SOLI_LEN 4
-#define SOLI_DISCOVERY 0
-#define SOLI_INFO_UNAME 1
-#define SOLI_CCTV_STREAM 2
-#define SOLI_IR_SEND   3
+  SOLI_DISCOVERY = 0,
+  SOLI_INFO_UNAME,
+  SOLI_CCTV_STREAM,
+  SOLI_IR_SEND,
+  SOLI_LEN
+};
 
 #define SOLI_MAX_CMD_LEN 64
 #define SOLI_MAX_CMD_TABLE_LEN SOLI_MAX_CMD_LEN * 10 * 10
-
+#define SOLIMOD_TIMEOUT_MS 20000
 typedef struct SOLI_CMD {
   char cmd[SOLI_MAX_CMD_LEN];
   int argc;
@@ -32,8 +36,15 @@ typedef struct SOLI_CMD_TABLE {
 
 } SOLI_CMD_TABLE;
 
+
 extern SOLI_CMD_TABLE cmd_table[];
 
+extern SOLI_CONF* SOLIMODCFG;
+
+extern FILE* LOGFPMOD;
+
+int solimod_set_cfg(SOLI_CONF* cfg);
+int solimod_set_logfp(FILE* logfp);
 
 uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag);
 

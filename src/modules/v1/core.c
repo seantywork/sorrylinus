@@ -2,6 +2,8 @@
 #include "sorrylinus/modules/v1/core.h"
 #include "sorrylinus/modules/v1/info/core.h"
 #include "sorrylinus/modules/v1/cctv/core.h"
+#include "sorrylinus/utils/core.h"
+#include "sorrylinus/utils/conf.h"
 
 
 
@@ -10,11 +12,47 @@ SOLI_CMD_TABLE cmd_table[] = {
 
     { .cmd = "discovery",    .args="-",                .comment="-"},
     { .cmd = "info-uname",   .args="-",                .comment="-"},
-    { .cmd = "cctv-stream",  .args="conf,location",    .comment="-"},
-    { .cmd = "ir-send",      .args="conf",             .comment="-"},
+    { .cmd = "cctv-stream",  .args="location",         .comment="-"},
+    { .cmd = "ir-send",      .args="-",                .comment="-"},
 };
 
 
+SOLI_CONF* SOLIMODCFG = NULL;
+
+FILE* LOGFPMOD = NULL;
+
+
+int solimod_set_cfg(SOLI_CONF* cfg){
+
+
+    if(cfg == NULL){
+
+        printf("null cfg\n");
+
+        return -1;
+
+    }
+
+    SOLIMODCFG = cfg;
+
+
+    return 0;
+}
+
+int solimod_set_logfp(FILE* logfp){
+
+    if(logfp == NULL){
+
+        printf("null logfp\n");
+
+        return -1;
+    }
+
+    LOGFPMOD = logfp;
+
+
+    return 0;
+}
 
 uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
 
@@ -27,6 +65,7 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
     memset(body, 0, (*flag) * sizeof(uint8_t));
 
     SOLI_CMD* soli_cmd = solimod_parse_cmd(command);
+
 
     if((void*)soli_cmd == NULL){
 
@@ -52,15 +91,26 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
     } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_CCTV_STREAM].cmd) == 0){
 
 
-        cctv_stream(body, soli_cmd->argv[0], soli_cmd->argv[1]);
+        if(soli_cmd->argc < 2){
+
+            sprintf(body, "failed to handle soli: too few arguments: %d for cmd: %s\n" , soli_cmd->argc, soli_cmd->cmd);
+
+        } else {
+
+            cctv_stream_toggle(body, soli_cmd->argv[0], soli_cmd->argv[1]);
+        
+        }
+
 
 
     } else {
 
 
         strcpy(body, "failed to handle soli: no such cmd");
-
+    
     }
+
+
 
     solimod_free_cmd(soli_cmd);
 

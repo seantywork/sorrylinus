@@ -37,7 +37,7 @@ extern int CCTV_STATUS;
 extern char CCTV_MESSAGE[CCTV_THREAD_MSG_LEN];
 
 
-void cctv_stream(char* result, char* conf, char* stream_key);
+void cctv_stream_toggle(char* result, char* conf, char* stream_key);
 
 
 void* start_cctv_stream(void* varg);

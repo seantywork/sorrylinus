@@ -1,5 +1,6 @@
 #include "sorrylinus/v1/sock/core.h"
 #include "sorrylinus/modules/v1/core.h"
+#include "sorrylinus/utils/core.h"
 
 SSL_CTX* ctx = NULL;
 BIO *web = NULL; 

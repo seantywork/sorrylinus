@@ -1,3 +1,4 @@
+
 #include "sorrylinus/modules/v1/cctv/core.h"
 
 
@@ -7,36 +8,94 @@ int CCTV_STATUS = CCTV_READY;
 
 char CCTV_MESSAGE[CCTV_THREAD_MSG_LEN] = {0};
 
-void cctv_stream_open(char* result, char* conf, char* stream_key){
+void cctv_stream_toggle(char* result, char* conf, char* stream_key){
 
 
     CCTV_STREAM_ARG sarg;
 
     strcpy(sarg.stream_key, stream_key);
 
+    int was_ready = 0;
+    int was_streaming = 0;
+
+    memset(CCTV_MESSAGE, 0, CCTV_THREAD_MSG_LEN);
 
     if(CCTV_STATUS == CCTV_READY){
 
+        was_ready = 1;
+
         pthread_create(&CCTV_ID, NULL, start_cctv_stream, (void*)&sarg);
+
 
     } else if (CCTV_STATUS == CCTV_STREAMING) {
 
-        pthread_cancel(CCTV_ID);
+        was_streaming = 1;
 
+        pthread_cancel(CCTV_ID);
 
     } else {
 
+        CCTV_STATUS = CCTV_READY;
 
+        strcpy(result, "cctv: stream: failed to toggle: unknown state\n");
+
+        return;
+    }
+
+
+    int ms_until_deadline = 0;
+
+    struct timespec rnow;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &rnow);
+
+    struct timespec rdeadline;
+
+    while(1){
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &rdeadline);
+
+        ms_until_deadline = ((rdeadline.tv_sec - rnow.tv_sec) * 1000 + (rdeadline.tv_nsec - rnow.tv_nsec) / 1000000);
+
+        if(ms_until_deadline > SOLIMOD_TIMEOUT_MS){
+
+            strcpy(result, "cctv: stream: toggle failed: timed out\n");
+
+            break;
+
+        }
+
+        if(was_ready == 1 && CCTV_STATUS == CCTV_STREAMING){
+
+            sprintf(result, "cctv: stream: toggle success: started: %s\n", CCTV_MESSAGE);
+
+            break;
+
+        }
+
+
+        if(was_streaming == 1 && CCTV_STATUS == CCTV_READY){
+
+            sprintf(result, "cctv: stream: toggle success: ended: %s\n", CCTV_MESSAGE);
+
+            break;
+
+        }
+
+
+        if(CCTV_STATUS == CCTV_FAILED){
+
+            sprintf(result, "cctv: stream: toggle failed: %s\n", CCTV_MESSAGE);
+
+            break;
+
+        }
 
 
     }
 
 
-
-
-
-
-
+    return;
 
 
 }
@@ -48,13 +107,10 @@ void* start_cctv_stream(void* varg){
 
     guint bus_watch_id;
     GMainLoop *loop = NULL;
-    // GstElement *bin, *pipeline, *source, *convert1,*filter1,*convert2,*filter2,*convert3, *muxsink,*infer,*tiler,*transform,*sink,*source1,*filter_1, *filter_2, *convert_1,*source_fake,
-    //*sink_fake ,*queue1;
 
     GstElement *bin, *pipeline, *source, *queue1, *convert1, *scale1, *enc1, *mux1, *queue2, *sink1;
 
     GstBus *bus;
-    //GstCaps *caps1,*caps2,*caps_1,*caps_2;
 
     GstElement *filter1;
     GstCaps *caps1;
@@ -67,6 +123,8 @@ void* start_cctv_stream(void* varg){
     };
 
     gst_init(&argc, &argv);
+
+    strcat(CCTV_MESSAGE, "gst initiated\n");
 
     loop = g_main_loop_new (NULL, FALSE);
 
@@ -98,30 +156,28 @@ void* start_cctv_stream(void* varg){
     sink1 = gst_element_factory_make("rtmpsink","sink1");
 
 
-    //gst_bin_add (GST_BIN (pipeline), source1);
-    //gst_bin_add (GST_BIN (pipeline), filter_1);
-    //gst_bin_add (GST_BIN (pipeline), filter_2);
-    //gst_bin_add (GST_BIN (pipeline), convert_1);
-
-    //gst_bin_add (GST_BIN (pipeline), tiler);
 
     if (!pipeline || !source || !queue1 || !convert1 || !scale1 
         || !filter1 || !enc1 || !mux1 || !queue2 || !sink1
     ){
-        g_printerr ("one element could not be created. Exiting.\n");
-        return -1;
+        strcat(CCTV_MESSAGE, "one element could not be created. exiting.\n");
+        CCTV_STATUS = CCTV_FAILED;
+        return NULL;
     }
 
+    strcat(CCTV_MESSAGE, "elements created\n");
 
 
     gst_bin_add_many(GST_BIN(pipeline), source, queue1, convert1, scale1, filter1, enc1, mux1, queue2, sink1, NULL);
 
-
     if (!gst_element_link_many(source, queue1, convert1, scale1, filter1, enc1, mux1, queue2, sink1,NULL))
     {
-        g_printerr ("elements could not be linked: 1. Exiting.\n");
-        return -1;
+        strcat(CCTV_MESSAGE, "elements could not be linked: exiting.\n");
+        CCTV_STATUS = CCTV_FAILED;
+        return NULL;
     }
+
+    strcat(CCTV_MESSAGE, "elements linked\n");
 
     caps1 = gst_caps_new_simple("video/x-raw",
         "width", G_TYPE_INT, 960,
@@ -129,8 +185,7 @@ void* start_cctv_stream(void* varg){
         NULL);
 
 
-    g_object_set(G_OBJECT(source), "device","/dev/video0", NULL);
-
+    g_object_set(G_OBJECT(source), "device", SOLIMODCFG->mod_cctv_device, NULL);
 
     g_object_set(G_OBJECT(filter1), "caps", caps1, NULL);
 
@@ -144,12 +199,15 @@ void* start_cctv_stream(void* varg){
 
     g_object_set(G_OBJECT(sink1), "location", cctv_stream_arg->stream_key, NULL);
 
-
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
     bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
     bus_watch_id = gst_bus_add_watch (bus, bus_call, loop);
     gst_object_unref (bus);
+
+    strcat(CCTV_MESSAGE, "cctv is streaming\n");
+
+    CCTV_STATUS = CCTV_STREAMING;
 
     g_main_loop_run (loop);
 
@@ -160,8 +218,7 @@ void* start_cctv_stream(void* varg){
 }
 
 
-gboolean bus_call (GstBus * bus, GstMessage * msg, gpointer data)
-{
+gboolean bus_call (GstBus * bus, GstMessage * msg, gpointer data){
 
   GMainLoop *loop = (GMainLoop *) data;
 

@@ -24,6 +24,8 @@
 #include <time.h>
 #include <endian.h>
 
+#include <stdarg.h>
+
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -107,8 +109,13 @@
 
 #define MAX_BUFF HUB_BODY_BYTEMAX
 
+#define MAX_TIMESTR_LEN 80
+#define MAX_LOG_TXT_LEN 1024 
+#define MAX_FMT_ARG_LEN 128
 
-int read_file_to_buffer(uint8_t* buff, int max_buff_len, char* file_path);
+#define SOLI_MAX_CONF_RAW_LEN  1024
+#define SOLI_MAX_KEY_LEN 128
+#define SOLI_MAX_VAL_LEN 512
 
 
 #endif
