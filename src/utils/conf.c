@@ -10,6 +10,7 @@ SOLI_CONF_TABLE conf_table[] = {
 
     { .key = "logfile",          .comment = ""},
     { .key = "mod_ir_freqfile",      .comment = ""},
+    { .key = "mod_cctv_source",      .comment = ""},
     { .key = "mod_cctv_device",      .comment = ""}
 
 };
@@ -205,6 +206,13 @@ int soli_conf_add_by_key(char* key, char* val){
         printf("config: mod_ir_freqfile: %s\n", SOLICFG.mod_ir_freqfile);
 
         return 1;
+
+    } else if (strcmp(key, conf_table[SOLICFG_MOD_CCTV_SOURCE].key) == 0){
+
+        strcpy(SOLICFG.mod_cctv_source, val);
+        printf("config: mod_cctv_source: %s\n", SOLICFG.mod_cctv_source);
+
+        return 2;
 
     } else if (strcmp(key, conf_table[SOLICFG_MOD_CCTV_DEVICE].key) == 0){
 

@@ -11,6 +11,7 @@ typedef enum SOLI_CONF_ENUM {
 
     SOLICFG_LOGFILE = 0,
     SOLICFG_MOD_IR_FREQFILE,
+    SOLICFG_MOD_CCTV_SOURCE,
     SOLICFG_MOD_CCTV_DEVICE
 
 } SOLI_CONF_ENUM;
@@ -21,6 +22,7 @@ typedef struct SOLI_CONF {
 
     char logfile[1024];
     char mod_ir_freqfile[1024];
+    char mod_cctv_source[1024];
     char mod_cctv_device[1024];
 
 } SOLI_CONF;

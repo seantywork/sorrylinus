@@ -48,7 +48,7 @@ gboolean bus_call (GstBus * bus, GstMessage * msg, gpointer data);
 /*
 
 gst-launch-1.0 
-  -e v4l2src device=/dev/video0 
+  -e v4l2src device=/dev/video0 # or, libcamerasrc
   ! queue 
   ! videoconvert 
   ! videoscale 

@@ -136,7 +136,7 @@ void* start_cctv_stream(void* varg){
 
     pipeline = gst_pipeline_new("soli-pipeline");
 
-    source = gst_element_factory_make("v4l2src", "source");
+    source = gst_element_factory_make(SOLIMODCFG->mod_cctv_source, "source");
 
     queue1 = gst_element_factory_make("queue","queue1");
 

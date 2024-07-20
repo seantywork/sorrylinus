@@ -7,7 +7,13 @@ GCC_LIB_FLAGS := -Wall -shared
 
 GCC_LIB_OBJ_FLAGS := -Wall -c -fpic 
 
-DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+GSTREAMER_PKG := libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio
+
+GSTREAMER_PKG_ARM := $(GSTREAMER_PKG) gstreamer1.0-libcamera
+
+DEP_PACKAGES := sqlite3 libsqlite3-dev libssl-dev $(GSTREAMER_PKG)
+
+DEP_PACKAGES_ARM := sqlite3 libsqlite3-dev libssl-dev $(GSTREAMER_PKG_ARM)
 
 DEP_PIGPIO := git clone https://github.com/seantywork/pigpio.git
 
@@ -50,13 +56,15 @@ dep-package:
 	apt-get -y install $(DEP_PACKAGES)
 
 
+dep-package-arm:
+
+	apt-get update
+
+	apt-get -y install $(DEP_PACKAGES_ARM)
+
 dep-source:
 
-	rm -rf pigpio
-
-	$(DEP_PIGPIO) && cd pigpio && make && make install 
-
-	rm -rf pigpio
+	rm -rf pigpio && $(DEP_PIGPIO) && cd pigpio && make && make install && rm -rf pigpio
 
 
 v1: $(OBJS) solimod $(COMMON_OBJS)
