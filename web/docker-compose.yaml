@@ -3,9 +3,9 @@ version: "3"
 services:
 
 
-        frankhub:
+        sorrylinus-hub:
                 build: ./hub
-                container_name: frankhub
+                container_name: sorrylinus-hub
                 ports:  
                         - "3000:3000"
                         - "3001:3001"

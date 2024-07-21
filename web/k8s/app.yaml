@@ -561,11 +561,18 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       restartPolicy: Always
+      volumes: 
+        - name: sorrylinus-again-storage 
+          persistentVolumeClaim: 
+            claimName: sorrylinus-again-pvc
       containers:
       - name: sorrylinus-again
         imagePullPolicy: Always
         image: registry.gitlab.com/seantywork/sorrylinus-again
         tty: true
+        volumeMounts: 
+        - mountPath: "/home/data" 
+          name: sorrylinus-again-storage 
         ports:
         - containerPort: 8000
           protocol: TCP
