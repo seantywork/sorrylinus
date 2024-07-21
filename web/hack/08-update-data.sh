@@ -4,22 +4,22 @@
 sudo mkdir -p /data/sorrylinus-again
 
 
-sudo mkdir -p /data/sorrylinus-again/data/admin
+sudo mkdir -p /data/sorrylinus-again/admin
 
-sudo echo '{}' | sudo tee /data/sorrylinus-again/data/admin/seantywork@gmail.com.json
+sudo echo '{}' | sudo tee /data/sorrylinus-again/admin/seantywork@gmail.com.json
 
-sudo mkdir -p /data/sorrylinus-again/data/media
+sudo mkdir -p /data/sorrylinus-again/media
 
-sudo mkdir -p /data/sorrylinus-again/data/media/article
+sudo mkdir -p /data/sorrylinus-again/media/article
 
-sudo mkdir -p /data/sorrylinus-again/data/media/image
+sudo mkdir -p /data/sorrylinus-again/media/image
 
-sudo mkdir -p /data/sorrylinus-again/data/media/video
+sudo mkdir -p /data/sorrylinus-again/media/video
 
-sudo mkdir -p /data/sorrylinus-again/data/session
+sudo mkdir -p /data/sorrylinus-again/session
 
 
-sudo mkdir -p /data/sorrylinus-again/data/user
+sudo mkdir -p /data/sorrylinus-again/user
 
 
 
