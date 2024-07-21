@@ -17,7 +17,11 @@ DEP_PACKAGES_ARM := sqlite3 libsqlite3-dev libssl-dev $(GSTREAMER_PKG_ARM)
 
 DEP_PIGPIO := git clone https://github.com/seantywork/pigpio.git
 
-INCLUDES := -I../include -I/usr/include/gstreamer-1.0 -I/usr/include/x86_64-linux-gnu -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+INCLUDES_ARC := -I/usr/include/x86_64-linux-gnu -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/aarch64-linux-gnu -I/usr/lib/aarch64-linux-gnu/glib-2.0/include  
+
+INCLUDES := -I../include -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 $(INCLUDES_ARC)
+
+# 
 
 LINKS := -L../lib
 
