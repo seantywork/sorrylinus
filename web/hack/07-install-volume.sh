@@ -52,3 +52,8 @@ sudo helm install nfs-subdir-external-provisioner nfs-subdir-external-provisione
 
 
 sudo kubectl apply -f ../k8s/default-storage-class.yaml
+
+
+######
+
+
