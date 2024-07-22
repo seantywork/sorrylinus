@@ -16,3 +16,4 @@ flask_session
 __pycache__
 rc.properties
 ogapi.json
+web/hack/cicd.conf
