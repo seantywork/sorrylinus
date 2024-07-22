@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+
+
+        sorrylinus-hub:
+                build: .
+                container_name: sorrylinus-hub
+
