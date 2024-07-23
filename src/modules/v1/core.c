@@ -13,7 +13,8 @@ SOLI_CMD_TABLE cmd_table[] = {
     { .cmd = "discovery",    .args="-",                .comment="-"},
     { .cmd = "info-uname",   .args="-",                .comment="-"},
     { .cmd = "cctv-stream",  .args="location",         .comment="-"},
-    { .cmd = "ir-send",      .args="-",                .comment="-"},
+    { .cmd = "ir-get-opts",  .args="-",                .comment="-"},
+    { .cmd = "ir-send",      .args="opt",              .comment="-"},
 };
 
 

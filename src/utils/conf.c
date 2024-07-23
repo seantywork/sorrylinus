@@ -8,8 +8,13 @@ FILE* LOGFP = NULL;
 
 SOLI_CONF_TABLE conf_table[] = {
 
-    { .key = "logfile",          .comment = ""},
-    { .key = "mod_ir_freqfile",      .comment = ""},
+    { .key = "logfile",              .comment = ""},
+    { .key = "mod_ir_eps",      .comment = ""},
+    { .key = "mod_ir_aeps",      .comment = ""},
+    { .key = "mod_ir_gap",      .comment = ""},
+    { .key = "mod_ir_outpin",      .comment = ""},
+    { .key = "mod_ir_frequency",      .comment = ""},
+    { .key = "mod_ir_opts_dir",      .comment = ""},
     { .key = "mod_cctv_source",      .comment = ""},
     { .key = "mod_cctv_device",      .comment = ""}
 
@@ -199,27 +204,68 @@ int soli_conf_add_by_key(char* key, char* val){
 
         return 0;
 
-    } else if (strcmp(key, conf_table[SOLICFG_MOD_IR_FREQFILE].key) == 0){
+    } else if (strcmp(key, conf_table[SOLICFG_MOD_IR_EPS].key) == 0){
 
+        sscanf(val, "%d", SOLICFG.mod_ir_eps);
 
-        strcpy(SOLICFG.mod_ir_freqfile, val);
-        printf("config: mod_ir_freqfile: %s\n", SOLICFG.mod_ir_freqfile);
+        printf("config: mod_ir_eps: %d\n", SOLICFG.mod_ir_eps);
 
         return 1;
+
+    }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_AEPS].key) == 0){
+
+
+        sscanf(val, "%d", SOLICFG.mod_ir_aeps);
+
+        printf("config: mod_ir_aeps: %d\n", SOLICFG.mod_ir_aeps);
+
+        return 2;
+
+    }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_GAP].key) == 0){
+
+
+        sscanf(val, "%d", SOLICFG.mod_ir_gap);
+
+        printf("config: mod_ir_gap: %d\n", SOLICFG.mod_ir_gap);
+
+        return 3;
+
+    }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_OUTPIN].key) == 0){
+
+        sscanf(val, "%d", SOLICFG.mod_ir_outpin);
+
+        printf("config: mod_ir_outpin: %d\n", SOLICFG.mod_ir_outpin);
+
+        return 4;
+
+    }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_FREQUENCY].key) == 0){
+
+        sscanf(val, "%d", SOLICFG.mod_ir_frequency);
+
+        printf("config: mod_ir_frequency: %d\n", SOLICFG.mod_ir_frequency);
+
+        return 5;
+
+    }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_OPTS_DIR].key) == 0){
+
+        strcpy(SOLICFG.mod_ir_opts_dir, val);
+        printf("config: mod_ir_opts_dir: %s\n", SOLICFG.mod_ir_opts_dir);
+
+        return 6;
 
     } else if (strcmp(key, conf_table[SOLICFG_MOD_CCTV_SOURCE].key) == 0){
 
         strcpy(SOLICFG.mod_cctv_source, val);
         printf("config: mod_cctv_source: %s\n", SOLICFG.mod_cctv_source);
 
-        return 2;
+        return 7;
 
     } else if (strcmp(key, conf_table[SOLICFG_MOD_CCTV_DEVICE].key) == 0){
 
         strcpy(SOLICFG.mod_cctv_device, val);
         printf("config: mod_cctv_device: %s\n", SOLICFG.mod_cctv_device);
 
-        return 2;
+        return 8;
 
     } else {
 
