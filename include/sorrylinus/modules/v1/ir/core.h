@@ -14,6 +14,12 @@ extern "C" {
 #define MAX_COMMAND_SIZE 512
 #define MAX_PULSES 12000
 
+
+
+void ir_get_opts(char* result);
+
+void ir_send(char* result, char* opt);
+
 void addPulse(uint32_t onPins, uint32_t offPins, uint32_t duration, gpioPulse_t *irSignal, int *pulseCount);
 
 

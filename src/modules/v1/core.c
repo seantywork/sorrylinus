@@ -1,6 +1,7 @@
 
 #include "sorrylinus/modules/v1/core.h"
 #include "sorrylinus/modules/v1/info/core.h"
+#include "sorrylinus/modules/v1/ir/core.h"
 #include "sorrylinus/modules/v1/cctv/core.h"
 #include "sorrylinus/utils/core.h"
 #include "sorrylinus/utils/conf.h"
@@ -89,13 +90,32 @@ uint8_t* solimod_handle(uint64_t command_len, uint8_t* command, int* flag){
 
 
 
+    } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_IR_GET_OPTS].cmd) == 0){
+
+
+        ir_get_opts(body);
+
+
+    } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_IR_SEND].cmd) == 0){
+
+        if(soli_cmd->argc < 1){
+
+            sprintf(body, "failed to handle soli: too few arguments: %d for cmd: %s\n" , soli_cmd->argc, soli_cmd->cmd);
+
+        } else {
+
+            ir_send(body, soli_cmd->argv[0]);
+        
+        }
+
+
     } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_INFO_UNAME].cmd) == 0){
 
 
         info_uname(body);
 
 
-    } else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_CCTV_STREAM].cmd) == 0){
+    }  else if (strcmp(soli_cmd->cmd, cmd_table[SOLI_CCTV_STREAM].cmd) == 0){
 
 
         if(soli_cmd->argc < 1){
