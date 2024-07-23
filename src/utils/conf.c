@@ -206,7 +206,7 @@ int soli_conf_add_by_key(char* key, char* val){
 
     } else if (strcmp(key, conf_table[SOLICFG_MOD_IR_EPS].key) == 0){
 
-        sscanf(val, "%d", SOLICFG.mod_ir_eps);
+        sscanf(val, "%d", &SOLICFG.mod_ir_eps);
 
         printf("config: mod_ir_eps: %d\n", SOLICFG.mod_ir_eps);
 
@@ -215,7 +215,7 @@ int soli_conf_add_by_key(char* key, char* val){
     }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_AEPS].key) == 0){
 
 
-        sscanf(val, "%d", SOLICFG.mod_ir_aeps);
+        sscanf(val, "%d", &SOLICFG.mod_ir_aeps);
 
         printf("config: mod_ir_aeps: %d\n", SOLICFG.mod_ir_aeps);
 
@@ -224,7 +224,7 @@ int soli_conf_add_by_key(char* key, char* val){
     }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_GAP].key) == 0){
 
 
-        sscanf(val, "%d", SOLICFG.mod_ir_gap);
+        sscanf(val, "%d", &SOLICFG.mod_ir_gap);
 
         printf("config: mod_ir_gap: %d\n", SOLICFG.mod_ir_gap);
 
@@ -232,7 +232,7 @@ int soli_conf_add_by_key(char* key, char* val){
 
     }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_OUTPIN].key) == 0){
 
-        sscanf(val, "%d", SOLICFG.mod_ir_outpin);
+        sscanf(val, "%d", &SOLICFG.mod_ir_outpin);
 
         printf("config: mod_ir_outpin: %d\n", SOLICFG.mod_ir_outpin);
 
@@ -240,7 +240,7 @@ int soli_conf_add_by_key(char* key, char* val){
 
     }else if (strcmp(key, conf_table[SOLICFG_MOD_IR_FREQUENCY].key) == 0){
 
-        sscanf(val, "%d", SOLICFG.mod_ir_frequency);
+        sscanf(val, "%d", &SOLICFG.mod_ir_frequency);
 
         printf("config: mod_ir_frequency: %d\n", SOLICFG.mod_ir_frequency);
 

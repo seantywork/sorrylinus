@@ -22,7 +22,7 @@ void sleepms(long ms);
 
 void fmt_logln(FILE *fp, char* fmt_out, ...);
 
-
+void stringify_array_int(char* strarray, int arr_len , int* arr);
 
 #ifdef __cplusplus
 }

@@ -206,3 +206,27 @@ void fmt_logln(FILE *fp, char* fmt_out, ...){
 
 
 }
+
+
+void stringify_array_int(char* strarray, int arr_len , int* arr){
+
+
+    strcat(strarray, "[ ");
+
+
+    for (int i = 0 ; i < arr_len; i ++){
+
+
+        char tmp_el[24] = {0};
+
+        sprintf(tmp_el, "%d, ", arr[i]);
+
+        strcat(strarray, tmp_el);
+
+    }
+
+
+    strcat(strarray, " ]");
+
+
+}

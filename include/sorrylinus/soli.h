@@ -25,6 +25,7 @@
 #include <endian.h>
 
 #include <stdarg.h>
+#include <dirent.h> 
 
 #include <openssl/ssl.h>
 #include <openssl/bio.h>

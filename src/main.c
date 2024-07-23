@@ -1,4 +1,5 @@
 #include "sorrylinus/soli.h"
+#include "sorrylinus/v1/cmd/core.h"
 #include "sorrylinus/v1/sock/core.h"
 #include "sorrylinus/utils/conf.h"
 #include "sorrylinus/modules/v1/core.h"
@@ -44,33 +45,39 @@ int main(int argc, char** argv){
 
     }
 
+    if(argc > 1){
 
-    printf("connecting to hubc...\n");
+        result = cmd_communicate(argv[1]);
+
+    } else {
+
+        printf("connecting to hubc...\n");
 
 
 
-    result = hubc_connect();
+        result = hubc_connect();
 
-    if(result < 0){
+        if(result < 0){
 
-        printf("failed to connect: %d\n", result);
+            printf("failed to connect: %d\n", result);
 
-        return -1;
+            return -1;
+
+        }
+
+        result = hubc_communicate();
+        
+
+        if(result < 0){
+
+            printf("failed to communicate: %d\n", result);
+
+            return -1;
+        }
+
+        printf("comminication terminated\n");
 
     }
-
-    result = hubc_communicate();
-    
-
-    if(result < 0){
-
-        printf("failed to communicate: %d\n", result);
-
-        return -1;
-    }
-
-    printf("comminication terminated\n");
-
 
     return 0;
 }

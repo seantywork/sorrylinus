@@ -34,6 +34,7 @@ SOLIMOD_LIBS := -lrt -lm -lpthread -lpigpio -lgstreamer-1.0 -lgobject-2.0 -lglib
 # -lpgpio
 
 OBJS := soli_sock_v1.o
+OBJS += soli_cmd_v1.o
 
 SOLIMOD_OBJS := solimod_v1.o
 SOLIMOD_OBJS += solimod_info_v1.o
@@ -79,6 +80,10 @@ v1: $(OBJS) solimod $(COMMON_OBJS)
 soli_sock_v1.o:
 
 	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_sock_v1.o v1/sock/core.c
+
+soli_cmd_v1.o:
+
+	gcc $(GCC_OBJ_FLAGS) $(INCLUDES) -o soli_cmd_v1.o v1/cmd/core.c
 
 
 solimod: $(SOLIMOD_OBJS) $(COMMON_MOD_OBJS)

@@ -1,6 +1,176 @@
 #include "sorrylinus/modules/v1/ir/core.h"
 
 
+void ir_get_opts(char* result){
+
+	char optsdir[1024] = {0};
+
+	DIR* d;
+
+	struct dirent *dir;
+
+	strcat(optsdir, "./conf/");
+
+	strcat(optsdir, SOLIMODCFG->mod_ir_opts_dir);
+
+	d = opendir(optsdir);
+
+	if(d){
+
+		while((dir = readdir(d)) != NULL){
+
+			if(strcmp(dir->d_name, ".") == 0){
+				continue;
+			}
+
+			if(strcmp(dir->d_name, "..") == 0){
+				continue;
+			}
+
+			strcat(result, dir->d_name);
+
+			strcat(result, "\n");
+			
+		}
+
+		closedir(d);
+	}
+
+
+}
+
+
+void ir_send(char* result, char* opt){
+
+	char optfile[1024] = {0};
+
+	strcat(optfile, "./conf/");
+
+	strcat(optfile, SOLIMODCFG->mod_ir_opts_dir);
+
+	strcat(optfile, "/");
+
+	strcat(optfile, opt);
+
+	uint8_t buff[MAX_OPT_SIZE] = {0};
+
+	int check = read_file_to_buffer(buff, MAX_OPT_SIZE, optfile);
+
+	if (check < 0){
+
+		strcpy(result, "ir_send: failed to read opt");
+
+		return;
+	}
+
+	int* signal;	
+
+	int signalc = 0;
+
+    char** lines;
+
+    int line_count = 0;
+
+    char* token;
+
+    char* delim = "\n";
+
+	char* delim2 = " ";
+
+    token = strtok(buff, delim);
+
+    while(token != NULL){
+
+        int linelen = 0;
+
+        if (line_count == 0){
+
+            lines = (char**)malloc(sizeof(char*) * (line_count + 1));
+
+        } else {
+
+            lines = (char**)realloc(lines, sizeof(char*) * (line_count + 1));
+
+        }
+
+        linelen = strlen(token) + 1;
+
+        lines[line_count] = (char*)malloc(sizeof(char) * linelen);
+
+        memset(lines[line_count], 0 , sizeof(char) * linelen);
+
+        strcpy(lines[line_count], token);
+
+        line_count += 1;
+
+        token = strtok(NULL, delim);
+    }
+
+    for (int i = 0 ; i < line_count; i++) {
+
+    	token = strtok(lines[i], delim2);
+
+		while(token != NULL){
+
+			if(signalc == 0){
+
+				signal = (int*)malloc(sizeof(int) * (signalc + 1));
+
+				sscanf(token, "%d", &(signal[signalc]));
+
+			} else {
+
+				signal = (int*)realloc(signal, sizeof(int) * (signalc + 1));
+
+				sscanf(token, "%d", &(signal[signalc]));
+
+			}
+
+			token = strtok(NULL, delim2);
+
+			signalc += 1;
+		}
+
+
+    }
+
+	double duty_cycle = (double)(SOLIMODCFG->mod_ir_gap / 1000000);
+
+
+	/*
+
+
+		int check = irSlingRaw(
+						SOLIMODCFG->mod_ir_outpin,
+						SOLIMODCFG->mod_ir_frequency,
+						duty_cycle,
+						signal,
+						sizeof(signal) / sizeof(signal));
+	*/
+
+	char testout[512] = {0};
+
+	stringify_array_int(testout, signalc, signal);
+
+	strcpy(result, testout);
+
+	free(signal);
+
+    for(int i = 0 ; i < line_count; i++){
+
+        free(lines[i]);
+
+    }
+
+    if (line_count != 0){
+
+        free(lines);
+    }
+
+
+}
+
+
 
 
 
