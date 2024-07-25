@@ -21,7 +21,7 @@ function build_sorrylinus_again(){
     /bin/cp -Rf "${SRC_OJSON}" "${DST_OJSON}"
     /bin/cp -Rf "${SRC_CYAML}" "${DST_CYAML}"
 
-    isDebugOn=$(cat file.txt | grep -c "debug: true")
+    isDebugOn=$(cat "${DST_CYAML}" | grep -c "debug: true")
 
     if [ $isDebugOn -eq 1 ]
     then
