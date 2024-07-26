@@ -21,6 +21,10 @@ sudo mkdir -p /data/sorrylinus-again/session
 
 sudo mkdir -p /data/sorrylinus-again/user
 
+sudo mkdir -p /data/sorrylinus-again/log
+
+sudo echo '{}' | sudo tee /data/sorrylinus-again/log/stat.json
+
 
 
 sudo chmod -R 777 /data/sorrylinus-again
