@@ -29,6 +29,12 @@ function build_sorrylinus_again(){
         exit 1
     fi
 
+    pushd "${SOLI_AGAIN_PROD_VENDOR_TUICSS_DIR}"
+
+    git pull
+
+    popd
+
     pushd "${SOLI_AGAIN_PROD_DIR}"
 
     git pull
