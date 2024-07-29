@@ -39,11 +39,19 @@ further below at [sorrylinus-again](#sorrylinus-again)
 
 Here is the video chat feature that is available under my permission
 
-<video src='doc/room.mp4' width=180/>
+
+
+https://github.com/user-attachments/assets/b6ca19dc-2a87-422c-acd3-381d71b70e82
+
+
 
 And this is CCTV feature using sorrylinus hub and sorrylinus 
 
-<video src='doc/cctv.mp4' width=180/>
+
+
+
+https://github.com/user-attachments/assets/6856c1c1-a897-4265-ac4f-62ab333ec9c9
+
 
 
 
