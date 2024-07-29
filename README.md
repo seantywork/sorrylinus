@@ -28,7 +28,7 @@ AC from outside my house, but somehow has grown into something bigger (and weird
 
 Below picture describes the whole structure
 
-![structure](>doc/structure.drawio.png)
+![structure](./doc/structure.drawio.png)
 
 
 Below is the web dashboard, and you can find out more details about it \
