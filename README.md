@@ -28,7 +28,7 @@ AC from outside my house, but somehow has grown into something bigger (and weird
 
 Below picture describes the whole structure
 
-<image src='doc/structure.drawio.png' width=640>
+![structure](>doc/structure.drawio.png)
 
 
 Below is the web dashboard, and you can find out more details about it \
@@ -39,11 +39,11 @@ further below at [sorrylinus-again](#sorrylinus-again)
 
 Here is the video chat feature that is available under my permission
 
-<video src='doc/room.mp4' width=480/>
+<video src='doc/room.mp4' width=180/>
 
 And this is CCTV feature using sorrylinus hub and sorrylinus 
 
-<video src='doc/cctv.mp4' width=480/>
+<video src='doc/cctv.mp4' width=180/>
 
 
 
