@@ -23,8 +23,8 @@ the most useful software on earth
 
 ## what on earth is this?
 
-This is a project that began with an aim to controlling my place's \
-AC from outside my house, but somehow has grown into something bigger (and weirder)
+This is a project that began with an aim to controlling an AC\
+at my place from outside, but somehow has grown into something bigger (and weirder)
 
 Below picture describes the whole structure
 
