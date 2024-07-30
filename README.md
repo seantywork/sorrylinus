@@ -54,6 +54,12 @@ https://github.com/user-attachments/assets/6856c1c1-a897-4265-ac4f-62ab333ec9c9
 
 
 
+This repository is primarily about the sorrylinus C client program running on RPi, \
+but the sweetest part IMO is the web part that enables the remote control.
+
+See below.
+
+
 
 ## web
 
@@ -72,17 +78,25 @@ with sorrylinus through TCP/TLS socket
 
 ### k8s
 
+So grateful for numerous and endless features that k8s supports, here is the list
+
+- 
 
 ### nginx
 
+To conveniently and securely manage traffic going through feebdaed.xyz domain
 
 ### turn
 
+Needed for WebRTC
 
 ### db 
 
+Not yet integrated, as it's more than enough for this application to simply use\
+file system and NFS
 
 ### hack
 
+A bunch of shell scripts to set up and maintain this project, including cicd pipeline
 
 
