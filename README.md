@@ -70,6 +70,8 @@ The Go project that powers the more maintainable web interface/dashboard\
 for not only interacting with sorrylinus module but also\
 for me having fun writing and chatting.
 
+Here is the repository of [sorrylinus-again](https://github.com/seantywork/sorrylinus-again)
+
 
 ### hub
 
