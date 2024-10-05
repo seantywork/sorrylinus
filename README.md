@@ -7,5 +7,6 @@ I'm sorry Linus, for building the most useless access point framework on your ke
 
 ## TODO
 
-- add ap pages
+- add ap pages, serving over http
+- add ws client on page
 
