@@ -12,7 +12,7 @@ DEP_MONGOOSE := git clone https://github.com/seantywork/mongoose.git
 
 DEP_CJSON := git clone https://github.com/seantywork/cJSON.git
 
-INCLUDES := -I./include -I./vendor -I./vendor/mongoose -I./vendor/cJSON
+INCLUDES := -I../../include -I./vendor -I./vendor/mongoose -I./vendor/cJSON
 
 LIBS := -lpthread -lssl -lcrypto 
 
@@ -23,7 +23,7 @@ OBJS += fhub_utils.o
 OBJS += fhub_sock.o
 OBJS += fhub_front.o
 
-INCLUDESV1 := -I./include
+INCLUDESV1 := -I../../include
 
 LIBSV1 := -lpthread -lssl -lcrypto 
 
